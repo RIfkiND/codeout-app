@@ -80,7 +80,7 @@ class ApiClient {
 	}
 
 	async logout() {
-		return this.fetchApi('/auth/logout', { method: 'POST' });
+		return this.fetchApi('/api/auth/logout', { method: 'POST' });
 	}
 
 	async getCurrentUser() {

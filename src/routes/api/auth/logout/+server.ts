@@ -8,6 +8,6 @@ export const POST: RequestHandler = async ({ locals }) => {
 		return json({ error: error.message }, { status: 500 });
 	}
 
-	// Redirect to home or login page
-	redirect(303, '/auth/login');
+	// Redirect to home page after successful logout
+	redirect(303, '/');
 };
