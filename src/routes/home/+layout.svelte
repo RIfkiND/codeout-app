@@ -11,7 +11,7 @@
 			<div class="flex grow justify-start gap-8">
 				<div class="text-2xl">CodeOut</div>
 				<MenuNavButton href="/home">Home</MenuNavButton>
-				<MenuNavButton href="/home/lobby">Lobby</MenuNavButton>
+				<MenuNavButton href="/home/lobby" match>Lobby</MenuNavButton>
 			</div>
 		</div>
 	</header>
