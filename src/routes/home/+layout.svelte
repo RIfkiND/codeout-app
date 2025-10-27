@@ -9,7 +9,7 @@
 	<header class="sticky top-0 w-full bg-transparent">
 		<div class="flex justify-around py-4">
 			<div class="flex grow justify-start gap-8">
-				<div class="text-2xl">CodeOut</div>
+				<div class="flex items-center justify-center align-middle text-2xl">CodeOut</div>
 				<MenuNavButton href="/home">Home</MenuNavButton>
 				<MenuNavButton href="/home/lobby" match>Lobby</MenuNavButton>
 			</div>
