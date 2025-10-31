@@ -3,7 +3,6 @@
 	import LanguageSelector from './LanguageSelector.svelte';
 
 	export let initialCode: string = '';
-	export let challenge: any = null;
 
 	let editor: Editor;
 	let code = initialCode;

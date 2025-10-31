@@ -33,15 +33,22 @@
 
 	async function initEditor() {
 		try {
+			// Ensure container is available
+			if (!container || !mounted) return;
+			
 			monaco = await initMonaco();
 			if (!monaco || !mounted) return;
+
+			// Small delay to ensure DOM is ready
+			await new Promise(resolve => setTimeout(resolve, 100));
 
 			const monacoLang = await getMonacoLanguage(language);
 			const initialValue = value || await getTemplate(language);
 			
 			const editorOptions = getEditorOptions({ 
 				minimap: { enabled: false },
-				fontSize: 14 
+				fontSize: 14,
+				automaticLayout: true
 			});
 
 			editor = monaco.editor.create(container, {
@@ -58,6 +65,9 @@
 				value = currentValue;
 				dispatch('change', { value: currentValue });
 			});
+
+			// Set the theme after creation
+			monaco.editor.setTheme(theme);
 
 			dispatch('ready', { editor });
 		} catch (error) {
@@ -95,12 +105,12 @@
 	onMount(() => fetchLanguages());
 </script>
 
-<div class="relative">
+<div class="relative h-full">
 	<div
 		bind:this={container}
-		class="border border-gray-700 rounded-lg overflow-hidden bg-gray-900"
-		style="height: {height};"
-	/>
+		class="border border-gray-700 rounded-lg overflow-hidden bg-gray-900 h-full"
+		style="height: {height === '100%' ? '100%' : height};"
+	></div>
 </div>
 
 <style>

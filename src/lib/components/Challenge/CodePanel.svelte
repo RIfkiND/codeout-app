@@ -4,8 +4,6 @@
 	import LanguageSelector from '$lib/components/Editor/LanguageSelector.svelte';
 	import { createEventDispatcher } from 'svelte';
 	
-	export let challenge: any = null;
-	
 	const dispatch = createEventDispatcher<{
 		submit: { code: string; language: string };
 		run: { code: string; language: string };
@@ -88,7 +86,7 @@
 	</div>
 
 	<!-- Editor -->
-	<div class="flex-1 relative bg-gray-900">
+	<div class="flex-1 min-h-0 bg-gray-900">
 		<Editor
 			bind:this={editor}
 			bind:value={code}
