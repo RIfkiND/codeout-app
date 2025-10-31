@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const difficulty = url.searchParams.get('difficulty') as 'easy' | 'medium' | 'hard' | null;
 		const category = url.searchParams.get('category');
 		const lobby_id = url.searchParams.get('lobby_id');
-		const is_global = url.searchParams.get('is_global') !== 'false'; // Default to global challenges
+		const is_global = url.searchParams.get('is_global') !== 'false'; 
 
 		const offset = (page - 1) * limit;
 

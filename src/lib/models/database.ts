@@ -83,6 +83,16 @@ export type Database = {
           created_by: string | null
           created_at: string
           updated_at: string
+          images: Json | null
+          video_url: string | null
+          hints: Json | null
+          solution_explanation: string | null
+          starter_code: Json | null
+          tags: string[] | null
+          view_count: number | null
+          attempt_count: number | null
+          success_rate: number | null
+          category: string | null
         }
         Insert: {
           id?: string
@@ -100,6 +110,16 @@ export type Database = {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          images?: Json | null
+          video_url?: string | null
+          hints?: Json | null
+          solution_explanation?: string | null
+          starter_code?: Json | null
+          tags?: string[] | null
+          view_count?: number | null
+          attempt_count?: number | null
+          success_rate?: number | null
+          category?: string | null
         }
         Update: {
           id?: string
@@ -117,6 +137,16 @@ export type Database = {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          images?: Json | null
+          video_url?: string | null
+          hints?: Json | null
+          solution_explanation?: string | null
+          starter_code?: Json | null
+          tags?: string[] | null
+          view_count?: number | null
+          attempt_count?: number | null
+          success_rate?: number | null
+          category?: string | null
         }
         Relationships: [
           {
@@ -266,6 +296,12 @@ export type Database = {
           total_test_cases: number
           error_message: string | null
           submitted_at: string
+          language_version: string | null
+          output: string | null
+          compilation_error: string | null
+          runtime_error: string | null
+          test_results: Json | null
+          submission_number: number | null
         }
         Insert: {
           id?: string
@@ -283,6 +319,12 @@ export type Database = {
           total_test_cases?: number
           error_message?: string | null
           submitted_at?: string
+          language_version?: string | null
+          output?: string | null
+          compilation_error?: string | null
+          runtime_error?: string | null
+          test_results?: Json | null
+          submission_number?: number | null
         }
         Update: {
           id?: string
@@ -300,6 +342,12 @@ export type Database = {
           total_test_cases?: number
           error_message?: string | null
           submitted_at?: string
+          language_version?: string | null
+          output?: string | null
+          compilation_error?: string | null
+          runtime_error?: string | null
+          test_results?: Json | null
+          submission_number?: number | null
         }
         Relationships: [
           {
@@ -378,6 +426,86 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      }
+      media_files: {
+        Row: {
+          id: string
+          filename: string
+          original_name: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          filename: string
+          original_name: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          filename?: string
+          original_name?: string
+          mime_type?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      programming_languages: {
+        Row: {
+          id: string
+          name: string
+          display_name: string
+          file_extension: string
+          monaco_language_id: string | null
+          piston_language: string | null
+          piston_version: string | null
+          is_active: boolean | null
+          template_code: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          display_name: string
+          file_extension: string
+          monaco_language_id?: string | null
+          piston_language?: string | null
+          piston_version?: string | null
+          is_active?: boolean | null
+          template_code?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          display_name?: string
+          file_extension?: string
+          monaco_language_id?: string | null
+          piston_language?: string | null
+          piston_version?: string | null
+          is_active?: boolean | null
+          template_code?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
       users: {
         Row: {

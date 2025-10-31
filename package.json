@@ -19,7 +19,8 @@
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
 		"@eslint/js": "^9.36.0",
-		"@lucide/svelte": "^0.546.0",
+		"@internationalized/date": "^3.10.0",
+		"@lucide/svelte": "^0.544.0",
 		"@playwright/test": "^1.55.1",
 		"@sveltejs/adapter-vercel": "^5.10.2",
 		"@sveltejs/kit": "^2.43.2",
@@ -29,6 +30,7 @@
 		"@tailwindcss/vite": "^4.1.13",
 		"@types/node": "^22",
 		"@vitest/browser": "^3.2.4",
+		"bits-ui": "^2.14.1",
 		"clsx": "^2.1.1",
 		"eslint": "^9.36.0",
 		"eslint-config-prettier": "^10.1.8",
@@ -51,10 +53,24 @@
 		"vitest-browser-svelte": "^1.1.0"
 	},
 	"dependencies": {
+		"@monaco-editor/loader": "^1.6.1",
 		"@supabase/auth-ui-shared": "^0.1.8",
 		"@supabase/auth-ui-svelte": "^0.2.9",
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.76.1",
-		"mode-watcher": "^1.1.0"
+		"@tiptap/core": "^3.10.1",
+		"@tiptap/extension-code-block-lowlight": "^3.10.1",
+		"@tiptap/extension-table": "^3.10.1",
+		"@tiptap/extension-table-cell": "^3.10.1",
+		"@tiptap/extension-table-header": "^3.10.1",
+		"@tiptap/extension-table-row": "^3.10.1",
+		"@tiptap/pm": "^3.10.1",
+		"@tiptap/starter-kit": "^3.10.1",
+		"class-variance-authority": "^0.7.1",
+		"cobe": "^0.6.5",
+		"lowlight": "^3.3.0",
+		"lucide-svelte": "^0.548.0",
+		"mode-watcher": "^1.1.0",
+		"monaco-editor": "^0.54.0"
 	}
 }

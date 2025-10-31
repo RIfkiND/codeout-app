@@ -3,8 +3,8 @@ import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
-		const { session, user } = await locals.safeGetSession();
-		if (!session || !user) {
+		const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+		if (userError || !user) {
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
 
@@ -89,8 +89,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 export const GET: RequestHandler = async ({ locals, url }) => {
 	try {
-		const { session, user } = await locals.safeGetSession();
-		if (!session || !user) {
+		const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+		if (userError || !user) {
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
 
