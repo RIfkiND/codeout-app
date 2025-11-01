@@ -4,16 +4,14 @@
 	import Globe from "$lib/components/Login/Globe.svelte";
 </script>
 
-<div class="grid min-h-svh lg:grid-cols-2">
-	<div class="flex flex-col gap-4 p-6 md:p-10">
+<div class="grid min-h-svh lg:grid-cols-2 bg-black">
+	<div class="flex flex-col gap-4 p-6 md:p-10 bg-black">
 		<div class="flex justify-center gap-2 md:justify-start">
-			<a href="##" class="flex items-center gap-2 font-medium">
-				<div
-					class="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md"
-				>
+			<a href="/" class="flex items-center gap-2 font-medium text-white">
+				<div class="bg-purple-600 text-white flex size-6 items-center justify-center rounded-md">
 					<GalleryVerticalEndIcon class="size-4" />
 				</div>
-				Acme Inc.
+				CodeOut App
 			</a>
 		</div>
 		<div class="flex flex-1 items-center justify-center">
@@ -22,7 +20,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="bg-muted relative hidden lg:flex items-center justify-center min-h-full">
+	<div class="bg-gray-900 relative hidden lg:flex items-center justify-center min-h-full border-l border-gray-700">
 		<div class="flex items-center justify-center w-full h-full">
 			<Globe />
 		</div>

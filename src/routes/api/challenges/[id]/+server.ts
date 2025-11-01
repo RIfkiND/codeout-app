@@ -27,7 +27,36 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			return json({ error: 'Challenge not found' }, { status: 404 });
 		}
 
-		return json({ challenge });
+		// Get user's previous submissions for this challenge
+		const { data: submissions } = await locals.supabase
+			.from('submissions')
+			.select('*')
+			.eq('challenge_id', params.id)
+			.eq('user_id', session.user.id)
+			.order('created_at', { ascending: false })
+			.limit(5);
+
+		// Get challenge statistics
+		const { data: stats } = await locals.supabase
+			.from('submissions')
+			.select('status')
+			.eq('challenge_id', params.id);
+
+		const totalSubmissions = stats?.length || 0;
+		const acceptedSubmissions = stats?.filter(s => s.status === 'accepted').length || 0;
+		const acceptanceRate = totalSubmissions > 0 ? (acceptedSubmissions / totalSubmissions) * 100 : 0;
+
+		return json({ 
+			challenge: {
+				...challenge,
+				submissions: submissions || [],
+				stats: {
+					totalSubmissions,
+					acceptedSubmissions,
+					acceptanceRate: Math.round(acceptanceRate * 100) / 100
+				}
+			}
+		});
 	} catch (error) {
 		console.error('Challenge API error:', error);
 		return json({

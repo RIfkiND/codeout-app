@@ -46,21 +46,21 @@
 	export function getLanguage() { return language; }
 </script>
 
-<div class="bg-gray-900 h-full flex flex-col">
+<div class="bg-neutral-950 h-full flex flex-col">
 	<!-- Header -->
-	<div class="p-4 border-b border-gray-700 flex items-center justify-between bg-gray-800">
+	<div class="p-4 border-b border-neutral-700 flex items-center justify-between bg-neutral-900">
 		<div class="flex items-center gap-4">
 			<LanguageSelector 
 				bind:selected={language} 
 				onChange={handleLanguageChange} 
 			/>
 		</div>
-		
-		<div class="flex items-center gap-2">
+		<!-- Actions -->
+		<div class="flex items-center gap-3">
 			<button 
 				on:click={runCode}
 				disabled={isRunning}
-				class="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+				class="px-4 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 			>
 				{#if isRunning}
 					<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -73,7 +73,7 @@
 			<button 
 				on:click={submitCode}
 				disabled={isSubmitting}
-				class="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+				class="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 			>
 				{#if isSubmitting}
 					<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

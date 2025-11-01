@@ -1,128 +1,107 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { CodeExecutor } from '$lib/services/codeExecutor';
-import type { TestCase } from '$lib/services/codeExecutor';
+import { pistonService } from '$lib/services/pistonService';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
-		// Check if user is authenticated
 		const { session } = await locals.safeGetSession();
 		if (!session) {
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
 
-		const { language, code, challengeId, testCases } = await request.json();
+		const { language, code, challengeId } = await request.json();
 
-		if (!language || !code) {
-			return json({ error: 'Language and code are required' }, { status: 400 });
+		if (!language || !code || !challengeId) {
+			return json({ error: 'Language, code, and challengeId are required' }, { status: 400 });
 		}
 
-		// Get challenge test cases if challengeId is provided
-		let finalTestCases: TestCase[] = testCases || [];
+		// Get challenge test cases from database
+		const { data: challenge, error: challengeError } = await locals.supabase
+			.from('challenges')
+			.select('testcases, title')
+			.eq('id', challengeId)
+			.single();
 		
-		if (challengeId && !testCases) {
-			// Fetch test cases from database
-			const { data: challenge } = await locals.supabase
-				.from('challenges')
-				.select('testcases')
-				.eq('id', challengeId)
-				.single();
-			
-			if (challenge?.testcases) {
-				finalTestCases = challenge.testcases as unknown as TestCase[];
-			}
+		if (challengeError || !challenge) {
+			return json({ error: 'Challenge not found' }, { status: 404 });
 		}
 
+		const testCases = challenge.testcases as Array<{ input: Record<string, unknown>; output: unknown }>;
+
+		// Execute code using Piston service
 		try {
-			// Use real code executor with Piston API
-			const result = await CodeExecutor.executeCode(code, language, finalTestCases);
+			const result = await pistonService.runTestCases(code, language, testCases);
 			
-			return json({
-				success: result.success,
-				output: result.output,
-				stderr: result.stderr,
-				stdout: result.stdout,
-				executionTime: Math.round(result.executionTime),
-				memory: Math.round(result.memory),
-				testResults: result.testResults,
-				passedTests: result.passedTests,
-				totalTests: result.totalTests,
-				language
-			});
+			const allTestsPassed = result.test_cases_passed === result.total_test_cases;
 			
-		} catch (error) {
-			// Fallback to mock execution if Piston API fails
-			console.warn('Piston API failed, using mock execution:', error);
-			
-			// Mock execution as fallback
-			const mockSuccess = Math.random() > 0.3;
-			let output = '';
-			
-			if (mockSuccess) {
-				output = 'Code executed successfully (mock mode)\n';
-				if (finalTestCases.length > 0) {
-					const passed = Math.floor(finalTestCases.length * 0.7);
-					output += `\nTest Cases: ${passed}/${finalTestCases.length} passed\n`;
-				}
-			} else {
-				output = 'Runtime error occurred (mock mode)\n';
+			// Save submission to database
+			const { error: submissionError } = await locals.supabase
+				.from('submissions')
+				.insert({
+					user_id: session.user.id,
+					challenge_id: challengeId,
+					language: language,
+					code: code,
+					status: allTestsPassed ? 'accepted' : 'wrong_answer',
+					execution_time: result.execution_time,
+					memory_usage: result.memory_used,
+					passed_test_cases: result.test_cases_passed,
+					total_test_cases: result.total_test_cases
+				});
+
+			if (submissionError) {
+				console.error('Failed to save submission:', submissionError);
 			}
 			
 			return json({
-				success: mockSuccess,
-				output,
-				stderr: mockSuccess ? '' : 'Mock runtime error',
-				stdout: output,
-				executionTime: Math.floor(Math.random() * 100) + 50,
-				memory: Math.floor(Math.random() * 20) + 10,
-				language,
-				isMockMode: true
+				success: true,
+				output: result.test_cases.map(tc => `Test ${tc.id}: ${tc.passed ? 'PASSED' : 'FAILED'} (${tc.time})\n${tc.passed ? '' : `Expected: ${tc.expected}, Got: ${tc.actual}`}`).join('\n'),
+				error: result.error_message,
+				executionTime: result.execution_time,
+				memory: result.memory_used,
+				testResults: result.test_cases,
+				allTestsPassed,
+				passedCount: result.test_cases_passed,
+				totalCount: result.total_test_cases
+			});
+			
+		} catch (executionError) {
+			console.error('Code execution error:', executionError);
+			
+			// Save failed submission
+			const { error: submissionError } = await locals.supabase
+				.from('submissions')
+				.insert({
+					user_id: session.user.id,
+					challenge_id: challengeId,
+					language: language,
+					code: code,
+					status: 'runtime_error',
+					execution_time: null,
+					memory_usage: null,
+					passed_test_cases: 0,
+					total_test_cases: testCases.length
+				});
+
+			if (submissionError) {
+				console.error('Failed to save failed submission:', submissionError);
+			}
+			
+			return json({
+				success: false,
+				output: '',
+				error: executionError instanceof Error ? executionError.message : 'Code execution failed',
+				executionTime: 0,
+				memory: 0,
+				testResults: [],
+				allTestsPassed: false,
+				passedCount: 0,
+				totalCount: testCases.length
 			});
 		}
-
-		/* 
-		// Uncomment this for production with Piston API
-		const response = await fetch(`${PISTON_API_URL}/execute`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				language,
-				version: version || 'latest',
-				files: [
-					{
-						content: code
-					}
-				],
-				stdin: input || ''
-			})
-		});
-
-		if (!response.ok) {
-			throw new Error(`Piston API error: ${response.statusText}`);
-		}
-
-		const result = await response.json();
-
-		return json({
-			success: true,
-			output: result.run?.output || '',
-			stderr: result.run?.stderr || '',
-			stdout: result.run?.stdout || '',
-			code: result.run?.code || 0,
-			language,
-			version: result.version || version
-		});
-		*/
+		
 	} catch (error) {
-		console.error('Code execution error:', error);
-		return json(
-			{
-				success: false,
-				error: error instanceof Error ? error.message : 'Unknown error occurred'
-			},
-			{ status: 500 }
-		);
+		console.error('API error:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
 	}
 };

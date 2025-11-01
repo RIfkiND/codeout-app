@@ -5,9 +5,10 @@
 	import { onMount } from 'svelte';
 	
 	export let challengeId: string | null = null;
+	export let challenge: any = null;
 	export let editable: boolean = false;
 
-	let challenge: any = null;
+	let currentChallenge: any = challenge;
 	let loading = false;
 	let error = '';
 
@@ -38,10 +39,13 @@
 	};
 
 	onMount(() => {
-		if (challengeId) {
+		if (challenge) {
+			// Challenge already provided as prop
+			currentChallenge = challenge;
+		} else if (challengeId) {
 			loadChallenge();
 		} else {
-			challenge = defaultChallenge;
+			currentChallenge = defaultChallenge;
 		}
 	});
 
@@ -58,7 +62,7 @@
 				throw new Error(data.error || 'Failed to load challenge');
 			}
 			
-			challenge = data.challenge;
+			currentChallenge = data.challenge;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load challenge';
 			console.error('Error loading challenge:', err);
@@ -69,10 +73,10 @@
 
 	function getDifficultyColor(difficulty: string) {
 		switch (difficulty) {
-			case 'easy': return 'bg-green-900/30 text-green-400 border-green-500/30';
-			case 'medium': return 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30';
-			case 'hard': return 'bg-red-900/30 text-red-400 border-red-500/30';
-			default: return 'bg-gray-900/30 text-gray-400 border-gray-500/30';
+			case 'easy': return 'bg-emerald-900/30 text-emerald-300 border-emerald-600/40';
+			case 'medium': return 'bg-amber-900/30 text-amber-300 border-amber-600/40';
+			case 'hard': return 'bg-rose-900/30 text-rose-300 border-rose-600/40';
+			default: return 'bg-neutral-800/50 text-neutral-300 border-neutral-600/40';
 		}
 	}
 
@@ -81,7 +85,7 @@
 	}
 </script>
 
-<div class="bg-gray-800 border-r border-gray-700 h-full overflow-y-auto">
+<div class="bg-neutral-900 border-r border-neutral-700 h-full overflow-y-auto">
 	{#if loading}
 		<div class="flex items-center justify-center h-full">
 			<div class="text-center">
@@ -101,23 +105,23 @@
 				</button>
 			</div>
 		</div>
-	{:else if challenge}
+	{:else if currentChallenge}
 		<div class="p-6">
 			<!-- Header -->
 			<div class="flex items-center justify-between mb-6">
-				<h1 class="text-xl font-bold text-white">{challenge.title}</h1>
+				<h1 class="text-xl font-bold text-neutral-100">{currentChallenge.title}</h1>
 				<div class="flex items-center gap-2">
-					<Badge variant="secondary" class={getDifficultyColor(challenge.difficulty)}>
-						{challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
+					<Badge variant="secondary" class={getDifficultyColor(currentChallenge.difficulty)}>
+						{currentChallenge.difficulty.charAt(0).toUpperCase() + currentChallenge.difficulty.slice(1)}
 					</Badge>
-					<span class="text-sm text-gray-400">
-						{challenge.max_score} pts
+					<span class="text-sm text-neutral-400">
+						{currentChallenge.max_score} pts
 					</span>
 				</div>
 			</div>
 
 			<!-- Categories -->
-			{#if challenge.challenge_categories?.length}
+			{#if currentChallenge.challenge_categories?.length}
 				<div class="mb-4 flex flex-wrap gap-2">
 					{#each challenge.challenge_categories as category}
 						<Badge variant="outline" class="text-xs text-gray-300 border-gray-600">
@@ -136,13 +140,13 @@
 
 			<!-- Challenge Content -->
 			<ChallengeDescription 
-				{challenge} 
+				challenge={currentChallenge} 
 				{editable} 
 				{challengeId}
 				on:error={handleError}
 			/>
 			
-			<ChallengeInfo {challenge} />
+			<ChallengeInfo challenge={currentChallenge} />
 		</div>
 	{:else}
 		<div class="flex items-center justify-center h-full">
