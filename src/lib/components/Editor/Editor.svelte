@@ -108,7 +108,7 @@
 <div class="relative h-full">
 	<div
 		bind:this={container}
-		class="border border-gray-700 rounded-lg overflow-hidden bg-gray-900 h-full"
+		class="border border-gray-700  overflow-hidden bg-gray-900 h-full"
 		style="height: {height === '100%' ? '100%' : height};"
 	></div>
 </div>

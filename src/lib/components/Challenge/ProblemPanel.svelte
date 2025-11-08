@@ -73,7 +73,7 @@
 
 	function getDifficultyColor(difficulty: string) {
 		switch (difficulty) {
-			case 'easy': return 'bg-emerald-900/30 text-emerald-300 border-emerald-600/40';
+			case 'easy': return 'bg-green-900/30 text-green-300 border-green-600/40';
 			case 'medium': return 'bg-amber-900/30 text-amber-300 border-amber-600/40';
 			case 'hard': return 'bg-rose-900/30 text-rose-300 border-rose-600/40';
 			default: return 'bg-neutral-800/50 text-neutral-300 border-neutral-600/40';
@@ -89,8 +89,8 @@
 	{#if loading}
 		<div class="flex items-center justify-center h-full">
 			<div class="text-center">
-				<div class="w-8 h-8 border-3 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-				<p class="text-gray-300">Loading challenge...</p>
+				<div class="w-8 h-8 border-3 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+				<p class="text-neutral-300">Loading challenge...</p>
 			</div>
 		</div>
 	{:else if error}
@@ -106,30 +106,35 @@
 			</div>
 		</div>
 	{:else if currentChallenge}
-		<div class="p-6">
-			<!-- Header -->
-			<div class="flex items-center justify-between mb-6">
-				<h1 class="text-xl font-bold text-neutral-100">{currentChallenge.title}</h1>
-				<div class="flex items-center gap-2">
-					<Badge variant="secondary" class={getDifficultyColor(currentChallenge.difficulty)}>
-						{currentChallenge.difficulty.charAt(0).toUpperCase() + currentChallenge.difficulty.slice(1)}
-					</Badge>
-					<span class="text-sm text-neutral-400">
-						{currentChallenge.max_score} pts
-					</span>
+		<div class="p-8 bg-gradient-to-b from-neutral-800 to-neutral-900">
+			<!-- Header Section -->
+			<div class="mb-8">
+				<div class="flex items-start justify-between mb-4">
+					<div>
+						<h1 class="text-2xl font-bold text-white mb-2">{currentChallenge.title}</h1>
+						<div class="flex items-center gap-3">
+							<Badge variant="secondary" class={getDifficultyColor(currentChallenge.difficulty)}>
+								{currentChallenge.difficulty.charAt(0).toUpperCase() + currentChallenge.difficulty.slice(1)}
+							</Badge>
+							<div class="text-sm text-neutral-400 flex items-center gap-1">
+								<span>💎</span>
+								<span>{currentChallenge.max_score} pts</span>
+							</div>
+						</div>
+					</div>
 				</div>
-			</div>
 
-			<!-- Categories -->
-			{#if currentChallenge.challenge_categories?.length}
-				<div class="mb-4 flex flex-wrap gap-2">
-					{#each challenge.challenge_categories as category}
-						<Badge variant="outline" class="text-xs text-gray-300 border-gray-600">
-							{category.categories.name}
-						</Badge>
-					{/each}
-				</div>
-			{/if}
+				<!-- Categories -->
+				{#if currentChallenge.challenge_categories?.length}
+					<div class="flex flex-wrap gap-2">
+						{#each challenge.challenge_categories as category}
+							<Badge variant="outline" class="text-xs text-neutral-300 border-neutral-600 bg-neutral-800/50">
+								{category.categories.name}
+							</Badge>
+						{/each}
+					</div>
+				{/if}
+			</div>
 
 			<!-- Error Display -->
 			{#if error}
@@ -150,7 +155,10 @@
 		</div>
 	{:else}
 		<div class="flex items-center justify-center h-full">
-			<p class="text-gray-400">No challenge selected</p>
+			<div class="text-center text-neutral-400">
+				<div class="text-4xl mb-2">📝</div>
+				<p>Select a challenge to view details</p>
+			</div>
 		</div>
 	{/if}
 </div>

@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Users, Trophy, Clock, Code2 } from 'lucide-svelte';
+	import { Users, Trophy, Clock, Code2, Target, TrendingUp, Calendar, Activity } from 'lucide-svelte';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import MainNavigation from '$lib/components/Header/MainNavigation.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let challenges: any[] = [];
-	let lobbies: any[] = [];
-	let recentSubmissions: any[] = [];
-	let loading = true;
+	let challenges = $state<any[]>([]);
+	let lobbies = $state<any[]>([]);
+	let recentSubmissions = $state<any[]>([]);
+	let loading = $state(true);
 
 	onMount(async () => {
 		try {
@@ -39,182 +43,258 @@
 			loading = false;
 		}
 	});
+
+	function getDifficultyColor(difficulty: string) {
+		switch (difficulty.toLowerCase()) {
+			case 'easy': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+			case 'medium': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+			case 'hard': return 'bg-red-500/10 text-red-400 border-red-500/30';
+			default: return 'bg-neutral-500/10 text-neutral-400 border-neutral-500/30';
+		}
+	}
 </script>
 
 <svelte:head>
-	<title>Dashboard - CodeOut App</title>
+	<title>Dashboard - CodeOut</title>
 </svelte:head>
 
-<div class="min-h-screen bg-black">
+<MainNavigation user={data.user} profile={data.profile} />
+
+<div class="min-h-screen bg-neutral-950">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 		<!-- Header -->
 		<div class="mb-8">
 			<h1 class="text-3xl font-bold text-white mb-2">Dashboard</h1>
-			<p class="text-gray-400">Welcome back! Ready to solve some challenges?</p>
+			<p class="text-neutral-400">Welcome back! Ready to solve some challenges?</p>
 		</div>
 
 		{#if loading}
 			<div class="flex items-center justify-center h-64">
 				<div class="text-center">
-					<div class="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-					<p class="text-gray-300">Loading dashboard...</p>
+					<div class="w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+					<p class="text-neutral-300">Loading dashboard...</p>
 				</div>
 			</div>
 		{:else}
 			<!-- Stats Cards -->
 			<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-				<div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-					<div class="flex items-center">
-						<div class="p-3 bg-purple-600/20 rounded-full">
-							<Code2 class="h-6 w-6 text-purple-400" />
+				<Card class="border-neutral-700 bg-neutral-800/50">
+					<CardContent class="p-6">
+						<div class="flex items-center">
+							<div class="p-3 bg-emerald-600/20 rounded-full">
+								<Code2 class="h-6 w-6 text-emerald-400" />
+							</div>
+							<div class="ml-4">
+								<h3 class="text-2xl font-bold text-white">24</h3>
+								<p class="text-neutral-400 text-sm">Problems Solved</p>
+							</div>
 						</div>
-						<div class="ml-4">
-							<h3 class="text-lg font-semibold text-white">24</h3>
-							<p class="text-gray-400 text-sm">Problems Solved</p>
-						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 				
-				<div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-					<div class="flex items-center">
-						<div class="p-3 bg-green-600/20 rounded-full">
-							<Trophy class="h-6 w-6 text-green-400" />
+				<Card class="border-neutral-700 bg-neutral-800/50">
+					<CardContent class="p-6">
+						<div class="flex items-center">
+							<div class="p-3 bg-yellow-600/20 rounded-full">
+								<Trophy class="h-6 w-6 text-yellow-400" />
+							</div>
+							<div class="ml-4">
+								<h3 class="text-2xl font-bold text-white">1,247</h3>
+								<p class="text-neutral-400 text-sm">Rating Points</p>
+							</div>
 						</div>
-						<div class="ml-4">
-							<h3 class="text-lg font-semibold text-white">1,247</h3>
-							<p class="text-gray-400 text-sm">Rating</p>
-						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 				
-				<div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-					<div class="flex items-center">
-						<div class="p-3 bg-blue-600/20 rounded-full">
-							<Users class="h-6 w-6 text-blue-400" />
+				<Card class="border-neutral-700 bg-neutral-800/50">
+					<CardContent class="p-6">
+						<div class="flex items-center">
+							<div class="p-3 bg-blue-600/20 rounded-full">
+								<Users class="h-6 w-6 text-blue-400" />
+							</div>
+							<div class="ml-4">
+								<h3 class="text-2xl font-bold text-white">3</h3>
+								<p class="text-neutral-400 text-sm">Active Lobbies</p>
+							</div>
 						</div>
-						<div class="ml-4">
-							<h3 class="text-lg font-semibold text-white">3</h3>
-							<p class="text-gray-400 text-sm">Active Lobbies</p>
-						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 				
-				<div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-					<div class="flex items-center">
-						<div class="p-3 bg-orange-600/20 rounded-full">
-							<Clock class="h-6 w-6 text-orange-400" />
+				<Card class="border-neutral-700 bg-neutral-800/50">
+					<CardContent class="p-6">
+						<div class="flex items-center">
+							<div class="p-3 bg-orange-600/20 rounded-full">
+								<TrendingUp class="h-6 w-6 text-orange-400" />
+							</div>
+							<div class="ml-4">
+								<h3 class="text-2xl font-bold text-white">127</h3>
+								<p class="text-neutral-400 text-sm">Day Streak</p>
+							</div>
 						</div>
-						<div class="ml-4">
-							<h3 class="text-lg font-semibold text-white">127</h3>
-							<p class="text-gray-400 text-sm">Days Streak</p>
-						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 			</div>
 
 			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				<!-- Recent Challenges -->
 				<div class="lg:col-span-2">
-					<div class="bg-gray-900 border border-gray-700 rounded-lg">
-						<div class="p-6 border-b border-gray-700">
-							<h2 class="text-xl font-semibold text-white">Recent Challenges</h2>
-						</div>
-						<div class="p-6">
+					<Card class="border-neutral-700 bg-neutral-800/50">
+						<CardHeader class="border-b border-neutral-700">
+							<CardTitle class="text-xl font-semibold text-white flex items-center">
+								<Target class="h-5 w-5 mr-2 text-emerald-400" />
+								Recent Challenges
+							</CardTitle>
+						</CardHeader>
+						<CardContent class="p-6">
 							{#if challenges.length > 0}
 								<div class="space-y-4">
 									{#each challenges.slice(0, 4) as challenge}
-										<div class="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-colors">
-											<div>
-												<h3 class="font-medium text-white">{challenge.title}</h3>
-												<p class="text-sm text-gray-400 mt-1">{challenge.difficulty}</p>
+										<div class="flex items-center justify-between p-4 bg-neutral-900/50 rounded-lg border border-neutral-700 hover:border-emerald-500/50 transition-colors">
+											<div class="flex-1">
+												<h3 class="font-medium text-white mb-2">{challenge.title}</h3>
+												<div class="flex items-center gap-2">
+													<Badge class="{getDifficultyColor(challenge.difficulty)} px-2 py-1 text-xs border rounded-full">
+														{challenge.difficulty}
+													</Badge>
+													{#if challenge.tags && challenge.tags.length > 0}
+														<div class="flex gap-1">
+															{#each challenge.tags.slice(0, 2) as tag}
+																<span class="px-2 py-1 text-xs bg-neutral-700 text-neutral-300 rounded">
+																	{tag}
+																</span>
+															{/each}
+														</div>
+													{/if}
+												</div>
 											</div>
 											<div class="flex items-center gap-3">
-												<span class="px-3 py-1 text-xs bg-purple-600/20 text-purple-400 rounded-full border border-purple-500/30">
-													{challenge.difficulty}
-												</span>
-												<a
-													href="/challenge/{challenge.id}"
-													class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm transition-colors"
+												<div class="text-right text-sm text-neutral-400">
+													<div>{challenge.view_count || 0} views</div>
+													<div>{challenge.success_rate || 0}% success</div>
+												</div>
+												<Button
+													onclick={() => window.location.href = `/challenge/${challenge.id}`}
+													class="bg-emerald-600 hover:bg-emerald-700 text-white"
 												>
 													Solve
-												</a>
+												</Button>
 											</div>
 										</div>
 									{/each}
 								</div>
 								<div class="mt-6 text-center">
-									<a
+									<Button
 										href="/challenge"
-										class="inline-flex items-center px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-800 transition-colors"
+										variant="outline"
+										class="border-neutral-600 text-neutral-300 hover:bg-neutral-700/50"
 									>
 										View All Challenges
-									</a>
+									</Button>
 								</div>
 							{:else}
-								<p class="text-gray-400 text-center py-8">No challenges available</p>
+								<div class="text-center py-12">
+									<Target class="h-16 w-16 text-neutral-600 mx-auto mb-4" />
+									<h3 class="text-lg font-semibold text-white mb-2">No Challenges Found</h3>
+									<p class="text-neutral-400 mb-4">Check back later for new challenges</p>
+								</div>
 							{/if}
-						</div>
-					</div>
+						</CardContent>
+					</Card>
 				</div>
 
 				<!-- Sidebar -->
 				<div class="space-y-6">
 					<!-- Active Lobbies -->
-					<div class="bg-gray-900 border border-gray-700 rounded-lg">
-						<div class="p-6 border-b border-gray-700">
-							<h2 class="text-xl font-semibold text-white">Active Lobbies</h2>
-						</div>
-						<div class="p-6">
+					<Card class="border-neutral-700 bg-neutral-800/50">
+						<CardHeader class="border-b border-neutral-700">
+							<CardTitle class="text-xl font-semibold text-white flex items-center">
+								<Users class="h-5 w-5 mr-2 text-blue-400" />
+								Live Lobbies
+							</CardTitle>
+						</CardHeader>
+						<CardContent class="p-6">
 							{#if lobbies.length > 0}
 								<div class="space-y-3">
 									{#each lobbies.slice(0, 3) as lobby}
-										<div class="p-3 bg-gray-800 rounded-lg border border-gray-700">
+										<div class="p-4 bg-neutral-900/50 rounded-lg border border-neutral-700 hover:border-blue-500/50 transition-colors">
 											<div class="flex items-center justify-between">
-												<div>
-													<h4 class="font-medium text-white text-sm">{lobby.name}</h4>
-													<p class="text-xs text-gray-400">{lobby.participant_count} participants</p>
+												<div class="flex-1">
+													<h4 class="font-medium text-white text-sm mb-1">{lobby.name}</h4>
+													<div class="flex items-center gap-2 text-xs text-neutral-400">
+														<Users class="h-3 w-3" />
+														<span>{lobby.participant_count || 0} participants</span>
+													</div>
 												</div>
-												<button class="px-3 py-1 bg-green-600/20 text-green-400 rounded text-xs border border-green-500/30">
+												<Button 
+													size="sm"
+													class="bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30"
+												>
 													Join
-												</button>
+												</Button>
 											</div>
 										</div>
 									{/each}
 								</div>
+								<div class="mt-4">
+									<Button
+										href="/home/lobby"
+										variant="outline"
+										size="sm"
+										class="w-full border-neutral-600 text-neutral-300 hover:bg-neutral-700/50"
+									>
+										View All Lobbies
+									</Button>
+								</div>
 							{:else}
-								<p class="text-gray-400 text-center py-4 text-sm">No active lobbies</p>
+								<div class="text-center py-8">
+									<Users class="h-12 w-12 text-neutral-600 mx-auto mb-3" />
+									<p class="text-neutral-400 text-sm">No active lobbies</p>
+								</div>
 							{/if}
-						</div>
-					</div>
+						</CardContent>
+					</Card>
 
 					<!-- Recent Submissions -->
 					{#if data.session}
-						<div class="bg-gray-900 border border-gray-700 rounded-lg">
-							<div class="p-6 border-b border-gray-700">
-								<h2 class="text-xl font-semibold text-white">Recent Submissions</h2>
-							</div>
-							<div class="p-6">
+						<Card class="border-neutral-700 bg-neutral-800/50">
+							<CardHeader class="border-b border-neutral-700">
+								<CardTitle class="text-xl font-semibold text-white flex items-center">
+									<Activity class="h-5 w-5 mr-2 text-orange-400" />
+									Recent Activity
+								</CardTitle>
+							</CardHeader>
+							<CardContent class="p-6">
 								{#if recentSubmissions.length > 0}
 									<div class="space-y-3">
 										{#each recentSubmissions.slice(0, 3) as submission}
-											<div class="p-3 bg-gray-800 rounded-lg border border-gray-700">
+											<div class="p-3 bg-neutral-900/50 rounded-lg border border-neutral-700">
 												<div class="flex items-center justify-between">
-													<div>
-														<h4 class="font-medium text-white text-sm">{submission.challenge?.title || 'Challenge'}</h4>
-														<p class="text-xs text-gray-400">{submission.language}</p>
+													<div class="flex-1">
+														<h4 class="font-medium text-white text-sm mb-1">{submission.challenge?.title || 'Challenge'}</h4>
+														<p class="text-xs text-neutral-400">{submission.language}</p>
 													</div>
-													<span class="px-2 py-1 text-xs rounded-full border {submission.status === 'accepted' ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-red-900/30 text-red-400 border-red-500/30'}">
-														{submission.status}
-													</span>
+													<Badge class="{submission.is_correct ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'} text-xs border">
+														{submission.is_correct ? 'Passed' : 'Failed'}
+													</Badge>
 												</div>
 											</div>
 										{/each}
 									</div>
 								{:else}
-									<p class="text-gray-400 text-center py-4 text-sm">No submissions yet</p>
+									<div class="text-center py-8">
+										<Activity class="h-12 w-12 text-neutral-600 mx-auto mb-3" />
+										<p class="text-neutral-400 text-sm mb-2">No submissions yet</p>
+										<Button
+											href="/challenge"
+											size="sm"
+											class="bg-emerald-600 hover:bg-emerald-700"
+										>
+											Start Coding
+										</Button>
+									</div>
 								{/if}
-							</div>
-						</div>
+							</CardContent>
+						</Card>
 					{/if}
 				</div>
 			</div>

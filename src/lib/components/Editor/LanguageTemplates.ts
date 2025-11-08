@@ -45,7 +45,10 @@ export function getDefaultLanguages(): ProgrammingLanguage[] {
 			monaco_language_id: 'javascript',
 			piston_language: 'javascript',
 			piston_version: '18.15.0',
-			template_code: 'function solution() {\n    // Your code here\n    return null;\n}',
+			template_code: `function solution() {
+    // Your code here
+    return null;
+}`,
 			is_active: true
 		},
 		{
@@ -56,7 +59,9 @@ export function getDefaultLanguages(): ProgrammingLanguage[] {
 			monaco_language_id: 'python',
 			piston_language: 'python',
 			piston_version: '3.10.0',
-			template_code: 'def solution():\n    # Your code here\n    return None',
+			template_code: `def solution():
+    # Your code here
+    return None`,
 			is_active: true
 		},
 		{
@@ -67,7 +72,12 @@ export function getDefaultLanguages(): ProgrammingLanguage[] {
 			monaco_language_id: 'java',
 			piston_language: 'java',
 			piston_version: '15.0.2',
-			template_code: 'public class Solution {\n    public Object solution() {\n        // Your code here\n        return null;\n    }\n}',
+			template_code: `public class Solution {
+    public Object solution() {
+        // Your code here
+        return null;
+    }
+}`,
 			is_active: true
 		},
 		{
@@ -78,7 +88,31 @@ export function getDefaultLanguages(): ProgrammingLanguage[] {
 			monaco_language_id: 'cpp',
 			piston_language: 'cpp',
 			piston_version: '10.2.0',
-			template_code: '#include <iostream>\nusing namespace std;\n\nclass Solution {\npublic:\n    auto solution() {\n        // Your code here\n        return nullptr;\n    }\n};',
+			template_code: `#include <iostream>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    auto solution() {
+        // Your code here
+        return nullptr;
+    }
+};`,
+			is_active: true
+		},
+		{
+			id: 'typescript',
+			name: 'typescript',
+			display_name: 'TypeScript',
+			file_extension: '.ts',
+			monaco_language_id: 'typescript',
+			piston_language: 'typescript',
+			piston_version: '5.0.3',
+			template_code: `function solution(): any {
+    // Your code here
+    return null;
+}`,
 			is_active: true
 		}
 	];

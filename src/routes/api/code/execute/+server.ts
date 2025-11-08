@@ -26,7 +26,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			return json({ error: 'Challenge not found' }, { status: 404 });
 		}
 
-		const testCases = challenge.testcases as Array<{ input: Record<string, unknown>; output: unknown }>;
+		const challengeData = challenge as { testcases: Array<{ input: Record<string, unknown>; output: unknown }> };
+		const testCases = challengeData.testcases;
 
 		// Execute code using Piston service
 		try {
@@ -35,19 +36,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			const allTestsPassed = result.test_cases_passed === result.total_test_cases;
 			
 			// Save submission to database
-			const { error: submissionError } = await locals.supabase
-				.from('submissions')
-				.insert({
-					user_id: session.user.id,
-					challenge_id: challengeId,
-					language: language,
-					code: code,
-					status: allTestsPassed ? 'accepted' : 'wrong_answer',
-					execution_time: result.execution_time,
-					memory_usage: result.memory_used,
-					passed_test_cases: result.test_cases_passed,
-					total_test_cases: result.total_test_cases
-				});
+			const submissionData = {
+				user_id: session.user.id,
+				challenge_id: challengeId as string,
+				language: language as string,
+				code: code as string,
+				status: allTestsPassed ? 'accepted' : 'wrong_answer',
+				execution_time: result.execution_time,
+				memory_usage: result.memory_used,
+				passed_test_cases: result.test_cases_passed,
+				total_test_cases: result.total_test_cases
+			};
+			const { error: submissionError } = await (locals.supabase
+				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })
+				.insert(submissionData);
 
 			if (submissionError) {
 				console.error('Failed to save submission:', submissionError);
@@ -69,19 +71,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			console.error('Code execution error:', executionError);
 			
 			// Save failed submission
-			const { error: submissionError } = await locals.supabase
-				.from('submissions')
-				.insert({
-					user_id: session.user.id,
-					challenge_id: challengeId,
-					language: language,
-					code: code,
-					status: 'runtime_error',
-					execution_time: null,
-					memory_usage: null,
-					passed_test_cases: 0,
-					total_test_cases: testCases.length
-				});
+			const failedSubmissionData = {
+				user_id: session.user.id,
+				challenge_id: challengeId as string,
+				language: language as string,
+				code: code as string,
+				status: 'runtime_error',
+				execution_time: null,
+				memory_usage: null,
+				passed_test_cases: 0,
+				total_test_cases: testCases.length
+			};
+			const { error: submissionError } = await (locals.supabase
+				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })
+				.insert(failedSubmissionData);
 
 			if (submissionError) {
 				console.error('Failed to save failed submission:', submissionError);

@@ -1,30 +1,9 @@
-import type { Database } from './database';
+import type { Lobby, LobbyInsert, LobbyUpdate, LobbyUser, LobbyUserInsert, LobbyUserUpdate, LobbyStatus, LobbyWithUsers } from './database';
 
-// Lobby types
-export type Lobby = Database['public']['Tables']['lobbies']['Row'];
-export type LobbyInsert = Database['public']['Tables']['lobbies']['Insert'];
-export type LobbyUpdate = Database['public']['Tables']['lobbies']['Update'];
+// Re-export types for backward compatibility
+export type { Lobby, LobbyInsert, LobbyUpdate, LobbyUser, LobbyUserInsert, LobbyUserUpdate, LobbyStatus, LobbyWithUsers };
 
-// Lobby users junction
-export type LobbyUser = Database['public']['Tables']['lobby_users']['Row'];
-export type LobbyUserInsert = Database['public']['Tables']['lobby_users']['Insert'];
-export type LobbyUserUpdate = Database['public']['Tables']['lobby_users']['Update'];
-
-// Enums
-export type LobbyStatus = Database['public']['Enums']['lobby_status'];
-
-// Extended lobby types with relations
-export interface LobbyWithUsers extends Lobby {
-  lobby_users?: Array<{
-    users: {
-      id: string;
-      name: string | null;
-      email: string | null;
-    };
-    joined_at: string;
-  }>;
-}
-
+// Additional lobby types
 export interface LobbyWithCreator extends Lobby {
   users?: {
     id: string;

@@ -183,7 +183,7 @@
 	}
 </script>
 
-<div class="h-screen bg-neutral-950 flex flex-col">
+<div class="h-screen bg-neutral-900 flex flex-col">
 	<!-- Top Navigation Bar -->
 	<nav class="bg-neutral-900 border-b border-neutral-700 px-6 py-3 flex items-center justify-between">
 		<div class="flex items-center gap-4">
@@ -193,7 +193,6 @@
 			<!-- Challenge Selector -->
 			<ChallengeSelector 
 				{challenges} 
-				loading={loadingChallenges} 
 				selectedId={selectedChallengeId}
 				on:select={selectChallenge}
 			/>

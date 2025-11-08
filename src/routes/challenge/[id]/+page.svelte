@@ -52,28 +52,29 @@
 </svelte:head>
 
 {#if loading}
-	<div class="h-screen bg-black flex items-center justify-center">
+	<div class="h-screen bg-neutral-950 flex items-center justify-center">
 		<div class="text-center">
-			<div class="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-			<p class="text-gray-300">Loading challenge...</p>
+			<div class="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+			<p class="text-lg text-neutral-300">Loading challenge...</p>
+			<p class="text-sm text-neutral-500">Preparing your coding adventure</p>
 		</div>
 	</div>
 {:else if error}
-	<div class="h-screen bg-black flex items-center justify-center">
+	<div class="h-screen bg-neutral-950 flex items-center justify-center">
 		<div class="text-center">
 			<div class="text-6xl mb-4">⚠️</div>
-			<h1 class="text-2xl font-bold text-white mb-2">Error Loading Challenge</h1>
-			<p class="text-gray-400 mb-6">{error}</p>
+			<h1 class="text-2xl font-bold text-neutral-100 mb-2">Error Loading Challenge</h1>
+			<p class="text-neutral-400 mb-6">{error}</p>
 			<div class="space-x-4">
 				<button 
-					class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
+					class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors"
 					onclick={() => window.location.reload()}
 				>
 					Try Again
 				</button>
 				<a 
 					href="/challenge"
-					class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
+					class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
 				>
 					Browse Challenges
 				</a>
@@ -83,14 +84,14 @@
 {:else if challenge}
 	<ChallengeLayout {challengeId} {challenge} editable={false} />
 {:else}
-	<div class="h-screen bg-black flex items-center justify-center">
+	<div class="h-screen bg-neutral-950 flex items-center justify-center">
 		<div class="text-center">
 			<div class="text-6xl mb-4">🔍</div>
-			<h1 class="text-2xl font-bold text-white mb-2">Challenge Not Found</h1>
-			<p class="text-gray-400 mb-6">The challenge you're looking for doesn't exist.</p>
+			<h1 class="text-2xl font-bold text-neutral-100 mb-2">Challenge Not Found</h1>
+			<p class="text-neutral-400 mb-6">The challenge you're looking for doesn't exist.</p>
 			<a 
 				href="/challenge"
-				class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
+				class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors"
 			>
 				Browse Challenges
 			</a>

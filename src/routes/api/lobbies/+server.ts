@@ -108,7 +108,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				max_participants,
 				created_by: user.id,
 				status: 'waiting'
-			})
+			} as unknown as never)
 			.select(`
 				*,
 				users!lobbies_created_by_fkey (
@@ -130,9 +130,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const { error: joinError } = await locals.supabase
 			.from('lobby_users')
 			.insert({
-				lobby_id: lobby.id,
+				lobby_id: (lobby as unknown as { id: string }).id,
 				user_id: user.id
-			});
+			} as unknown as never);
 
 		if (joinError) {
 			console.error('Auto-join error:', joinError);

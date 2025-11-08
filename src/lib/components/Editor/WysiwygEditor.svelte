@@ -21,12 +21,38 @@
 				StarterKit.configure({
 					codeBlock: {
 						HTMLAttributes: {
-							class: 'bg-gray-900 text-gray-100 p-3 rounded-md font-mono text-sm overflow-x-auto'
+							class: 'bg-neutral-900 text-emerald-300 p-4 rounded-md font-mono text-sm overflow-x-auto border border-neutral-700 my-4'
 						}
 					},
 					code: {
 						HTMLAttributes: {
-							class: 'bg-gray-700 text-gray-100 px-1 py-0.5 rounded font-mono text-sm'
+							class: 'bg-emerald-900/20 text-emerald-300 px-2 py-1 rounded font-mono text-sm border border-emerald-800/30'
+						}
+					},
+					heading: {
+						levels: [1, 2, 3],
+						HTMLAttributes: {
+							class: 'text-neutral-100 font-semibold mb-2'
+						}
+					},
+					paragraph: {
+						HTMLAttributes: {
+							class: 'text-neutral-200 leading-relaxed mb-3'
+						}
+					},
+					bulletList: {
+						HTMLAttributes: {
+							class: 'text-neutral-200 space-y-1 ml-4 list-disc'
+						}
+					},
+					orderedList: {
+						HTMLAttributes: {
+							class: 'text-neutral-200 space-y-1 ml-4 list-decimal'
+						}
+					},
+					listItem: {
+						HTMLAttributes: {
+							class: 'text-neutral-200'
 						}
 					}
 				})
@@ -35,12 +61,11 @@
 			editable,
 			editorProps: {
 				attributes: {
-					class: 'prose prose-invert max-w-none focus:outline-none min-h-[200px] p-4',
+					class: 'prose prose-invert prose-emerald max-w-none focus:outline-none min-h-[200px] p-4 text-neutral-200',
 					placeholder
 				}
 			},
 			onTransaction: () => {
-				// Force re-render to update reactive statements
 				editor = editor;
 			},
 			onUpdate: ({ editor }) => {
@@ -98,85 +123,94 @@
 
 {#if editable}
 	<!-- Toolbar -->
-	<div class="border-b border-gray-600 bg-gray-700 p-2 flex flex-wrap gap-1 rounded-t-md">
+	<div class="border-b border-neutral-600 bg-neutral-800 p-3 flex flex-wrap gap-2 rounded-t-md">
 		<button
 			type="button"
 			on:click={() => addHeading(1)}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-			class:bg-blue-600={editor?.isActive('heading', { level: 1 })}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-medium"
+			class:bg-emerald-600={editor?.isActive('heading', { level: 1 })}
+			class:hover:bg-emerald-700={editor?.isActive('heading', { level: 1 })}
 		>
 			H1
 		</button>
 		<button
 			type="button"
 			on:click={() => addHeading(2)}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-			class:bg-blue-600={editor?.isActive('heading', { level: 2 })}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-medium"
+			class:bg-emerald-600={editor?.isActive('heading', { level: 2 })}
+			class:hover:bg-emerald-700={editor?.isActive('heading', { level: 2 })}
 		>
 			H2
 		</button>
 		<button
 			type="button"
 			on:click={() => addHeading(3)}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-			class:bg-blue-600={editor?.isActive('heading', { level: 3 })}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-medium"
+			class:bg-emerald-600={editor?.isActive('heading', { level: 3 })}
+			class:hover:bg-emerald-700={editor?.isActive('heading', { level: 3 })}
 		>
 			H3
 		</button>
 		
-		<div class="w-px h-6 bg-gray-500 mx-1"></div>
+		<div class="w-px h-6 bg-neutral-500 mx-1"></div>
 		
 		<button
 			type="button"
 			on:click={toggleBold}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors font-bold"
-			class:bg-blue-600={editor?.isActive('bold')}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-bold"
+			class:bg-emerald-600={editor?.isActive('bold')}
+			class:hover:bg-emerald-700={editor?.isActive('bold')}
 		>
 			B
 		</button>
 		<button
 			type="button"
 			on:click={toggleItalic}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors italic"
-			class:bg-blue-600={editor?.isActive('italic')}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors italic"
+			class:bg-emerald-600={editor?.isActive('italic')}
+			class:hover:bg-emerald-700={editor?.isActive('italic')}
 		>
 			I
 		</button>
 		<button
 			type="button"
 			on:click={toggleCode}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors font-mono"
-			class:bg-blue-600={editor?.isActive('code')}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-mono"
+			class:bg-emerald-600={editor?.isActive('code')}
+			class:hover:bg-emerald-700={editor?.isActive('code')}
 		>
 			&lt;/&gt;
 		</button>
 		
-		<div class="w-px h-6 bg-gray-500 mx-1"></div>
+		<div class="w-px h-6 bg-neutral-500 mx-1"></div>
 		
 		<button
 			type="button"
 			on:click={toggleBulletList}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-			class:bg-blue-600={editor?.isActive('bulletList')}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors"
+			class:bg-emerald-600={editor?.isActive('bulletList')}
+			class:hover:bg-emerald-700={editor?.isActive('bulletList')}
 		>
 			• List
 		</button>
 		<button
 			type="button"
 			on:click={toggleOrderedList}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-			class:bg-blue-600={editor?.isActive('orderedList')}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors"
+			class:bg-emerald-600={editor?.isActive('orderedList')}
+			class:hover:bg-emerald-700={editor?.isActive('orderedList')}
 		>
 			1. List
 		</button>
 		
-		<div class="w-px h-6 bg-gray-500 mx-1"></div>
+		<div class="w-px h-6 bg-neutral-500 mx-1"></div>
 		
 		<button
 			type="button"
 			on:click={toggleCodeBlock}
-			class="px-2 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-			class:bg-blue-600={editor?.isActive('codeBlock')}
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors"
+			class:bg-emerald-600={editor?.isActive('codeBlock')}
+			class:hover:bg-emerald-700={editor?.isActive('codeBlock')}
 		>
 			Code Block
 		</button>
@@ -185,6 +219,6 @@
 
 <!-- Editor -->
 <div 
-	class="bg-gray-800 text-gray-100 border border-gray-600 {editable ? 'rounded-b-md' : 'rounded-md'}"
+	class="bg-neutral-900 text-neutral-200 border border-neutral-600 {editable ? 'rounded-b-md' : 'rounded-md'} min-h-[250px]"
 	bind:this={element}
 ></div>

@@ -43,19 +43,19 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			.eq('challenge_id', params.id);
 
 		const totalSubmissions = stats?.length || 0;
-		const acceptedSubmissions = stats?.filter(s => s.status === 'accepted').length || 0;
+		const acceptedSubmissions = stats?.filter((s: { status: string }) => s.status === 'accepted').length || 0;
 		const acceptanceRate = totalSubmissions > 0 ? (acceptedSubmissions / totalSubmissions) * 100 : 0;
 
 		return json({ 
-			challenge: {
-				...challenge,
+			challenge: challenge ? {
+				...(challenge as Record<string, unknown>),
 				submissions: submissions || [],
 				stats: {
 					totalSubmissions,
 					acceptedSubmissions,
 					acceptanceRate: Math.round(acceptanceRate * 100) / 100
 				}
-			}
+			} : null
 		});
 	} catch (error) {
 		console.error('Challenge API error:', error);
@@ -85,18 +85,18 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			.eq('id', user.id)
 			.single();
 
-		const isCreator = challenge?.created_by === user.id;
-		const isAdmin = userData?.role === 'admin';
+		const isCreator = (challenge as unknown as { created_by?: string })?.created_by === user.id;
+		const isAdmin = (userData as unknown as { role?: string })?.role === 'admin';
 
 		if (!isCreator && !isAdmin) {
 			return json({ error: 'Only challenge creator or admin can modify this challenge' }, { status: 403 });
 		}
 
-		const updateData = await request.json();
+		const updateData = await request.json() as Record<string, unknown>;
 
 		const { data: updatedChallenge, error } = await locals.supabase
 			.from('challenges')
-			.update(updateData)
+			.update(updateData as never)
 			.eq('id', params.id)
 			.select()
 			.single();
@@ -135,8 +135,11 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			.eq('id', user.id)
 			.single();
 
-		const isCreator = challenge?.created_by === user.id;
-		const isAdmin = userData?.role === 'admin';
+		const challengeData = challenge as { created_by?: string } | null;
+		const userRoleData = userData as { role?: string } | null;
+		
+		const isCreator = challengeData?.created_by === user.id;
+		const isAdmin = userRoleData?.role === 'admin';
 
 		if (!isCreator && !isAdmin) {
 			return json({ error: 'Only challenge creator or admin can delete this challenge' }, { status: 403 });

@@ -26,16 +26,16 @@
 	</label>
 	
 	{#if loading}
-		<div class="w-32 h-8 bg-gray-700 animate-pulse rounded"></div>
+		<div class="w-32 h-8 bg-neutral-800/50 animate-pulse rounded"></div>
 	{:else}
 		<select 
 			id="language-select"
 			bind:value={selected}
 			on:change={handleChange}
-			class="px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+			class="px-3 py-2 border border-gray-600 rounded-lg bg-neutral-800/50 text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
 		>
 			{#each languages as lang}
-				<option value={lang.name} class="bg-gray-700 text-white">
+				<option value={lang.name} class="bg-neutral-800 text-white">
 					{lang.display_name}
 				</option>
 			{/each}

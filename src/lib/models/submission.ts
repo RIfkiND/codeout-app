@@ -1,17 +1,7 @@
-import type { Database } from './database';
+import type { Submission, SubmissionInsert, SubmissionUpdate, SinglePlayerSession, SinglePlayerSessionInsert, SinglePlayerSessionUpdate, SessionStatus } from './database';
 
-// Submission types
-export type Submission = Database['public']['Tables']['submissions']['Row'];
-export type SubmissionInsert = Database['public']['Tables']['submissions']['Insert'];
-export type SubmissionUpdate = Database['public']['Tables']['submissions']['Update'];
-
-// Single player session types
-export type SinglePlayerSession = Database['public']['Tables']['single_player_sessions']['Row'];
-export type SinglePlayerSessionInsert = Database['public']['Tables']['single_player_sessions']['Insert'];
-export type SinglePlayerSessionUpdate = Database['public']['Tables']['single_player_sessions']['Update'];
-
-// Enums
-export type SessionStatus = Database['public']['Enums']['session_status'];
+// Re-export types for backward compatibility
+export type { Submission, SubmissionInsert, SubmissionUpdate, SinglePlayerSession, SinglePlayerSessionInsert, SinglePlayerSessionUpdate, SessionStatus };
 
 // Extended submission types with relations
 export interface SubmissionWithChallenge extends Submission {
