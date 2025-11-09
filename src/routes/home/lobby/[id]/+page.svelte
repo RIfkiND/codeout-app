@@ -218,7 +218,7 @@
 						</Button>
 					{:else if lobby.status === 'running' && isParticipant()}
 						<Button
-							onclick={() => goto(`/challenge`)}
+							onclick={() => goto(`/challenge?lobbyId=${lobby.id}`)}
 							class="bg-blue-600 hover:bg-blue-700"
 						>
 							<ExternalLink class="w-4 h-4 mr-2" />

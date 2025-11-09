@@ -50,7 +50,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const sortBy = url.searchParams.get('sortBy') || 'created_at';
 		const sortOrder = url.searchParams.get('sortOrder') || 'desc';
 		const lobby_id = url.searchParams.get('lobby_id');
-		const is_global = url.searchParams.get('is_global') !== 'false'; 
+		const is_global = url.searchParams.get('is_global') !== 'false';
+		const fetchAll = url.searchParams.get('all') === 'true'; // New parameter for fetching all challenges
 
 		const offset = (page - 1) * limit;
 
@@ -78,46 +79,82 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			query = query.eq('is_global', true);
 		}
 
-		if (difficulty && difficulty !== 'all') {
-			query = query.eq('difficulty', difficulty);
+		// When fetching all challenges, skip server-side filtering except for basic constraints
+		if (!fetchAll) {
+			if (difficulty && difficulty !== 'all') {
+				query = query.eq('difficulty', difficulty);
+			}
+
+			if (search) {
+				// Search in title and description
+				query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+			}
+
+			if (category && categories.length === 0) {
+				// Single category filter (backwards compatibility)
+				query = query.eq('category', category);
+			}
+
+			if (categories.length > 0) {
+				// Multiple categories filter
+				query = query.in('category', categories);
+			}
+
+			if (tags.length > 0) {
+				// Tags filter - check if any of the selected tags exist in the tags array
+				const tagFilters = tags.map(tag => `tags.cs.{${tag}}`).join(',');
+				query = query.or(tagFilters);
+			}
 		}
 
-		if (search) {
-			// Search in title and description
-			query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
-		}
-
-		if (category && categories.length === 0) {
-			// Single category filter (backwards compatibility)
-			query = query.eq('category', category);
-		}
-
-		if (categories.length > 0) {
-			// Multiple categories filter
-			query = query.in('category', categories);
-		}
-
-		if (tags.length > 0) {
-			// Tags filter - check if any of the selected tags exist in the tags array
-			const tagFilters = tags.map(tag => `tags.cs.{${tag}}`).join(',');
-			query = query.or(tagFilters);
-		}
-
-		// Apply sorting
+		// Apply sorting (always apply sorting)
 		const sortColumn = ['created_at', 'title', 'difficulty', 'view_count', 'success_rate'].includes(sortBy) 
 			? sortBy 
 			: 'created_at';
 		
 		query = query.order(sortColumn, { ascending: sortOrder === 'asc' });
 
-		// Apply pagination
-		query = query.range(offset, offset + limit - 1);
+		// Apply pagination (skip pagination if fetching all)
+		if (!fetchAll) {
+			query = query.range(offset, offset + limit - 1);
+		}
 
 		const { data: challenges, error } = await query;
 
 		if (error) {
 			console.error('Challenges fetch error:', error);
 			return json({ error: 'Failed to fetch challenges' }, { status: 500 });
+		}
+
+		// For fetchAll, skip the count query and return all challenges without pagination metadata
+		if (fetchAll) {
+			// Enhance challenges with solved count and user status if needed
+			const enhancedChallenges: EnhancedChallenge[] = (challenges as Challenge[])?.map((challenge: Challenge) => ({
+				...challenge,
+				solved_count: formatSolvedCount(challenge.attempt_count, challenge.success_rate),
+				success_percentage: challenge.success_rate ? Math.round(challenge.success_rate) : 0,
+				user_status: 'unsolved' // Default status
+			})) || [];
+
+			return json({
+				challenges: enhancedChallenges,
+				pagination: {
+					page: 1,
+					limit: enhancedChallenges.length,
+					total: enhancedChallenges.length,
+					totalPages: 1
+				},
+				filters: {
+					difficulty,
+					search,
+					category,
+					categories,
+					tags,
+					status,
+					sortBy,
+					sortOrder
+				}
+			});
 		}
 
 		// Get total count for pagination with same filters
@@ -228,50 +265,70 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		const challengeData = await request.json();
-		const { is_global = true, lobby_id } = challengeData;
+		const { is_global = false, lobby_id } = challengeData;
 
-		// Validate challenge type
-		if (is_global && lobby_id) {
-			return json({ error: 'Global challenges cannot have a lobby_id' }, { status: 400 });
-		}
-
-		if (!is_global && !lobby_id) {
-			return json({ error: 'Lobby challenges must have a lobby_id' }, { status: 400 });
-		}
-
-		// Check permissions based on challenge type
+		// Validate challenge type and permissions
 		if (is_global) {
-			// Only admins can create global challenges
+			// Only admins can create global (single-player) challenges
 			const { data: userData } = await locals.supabase
 				.from('users')
 				.select('role')
 				.eq('id', user.id)
 				.single();
 
-			if (!userData || (userData as { role: string }).role !== 'admin') {
+			if (!userData || userData.role !== 'admin') {
 				return json({ error: 'Only admins can create global challenges' }, { status: 403 });
+			}
+
+			if (lobby_id) {
+				return json({ error: 'Global challenges cannot have a lobby_id' }, { status: 400 });
 			}
 		} else {
 			// For lobby challenges, verify user owns the lobby
+			if (!lobby_id) {
+				return json({ error: 'Lobby challenges must have a lobby_id' }, { status: 400 });
+			}
+
 			const { data: lobby } = await locals.supabase
 				.from('lobbies')
 				.select('created_by')
 				.eq('id', lobby_id)
 				.single();
 
-			if (!lobby || (lobby as { created_by: string }).created_by !== user.id) {
+			if (!lobby || lobby.created_by !== user.id) {
 				return json({ error: 'You can only create challenges for lobbies you own' }, { status: 403 });
 			}
 		}
 
+		// Map frontend fields to database schema
+		const dbChallengeData = {
+			title: challengeData.title,
+			description: challengeData.description,
+			difficulty: challengeData.difficulty,
+			time_limit: challengeData.time_limit || challengeData.timeLimit, // Support both field names
+			memory_limit: challengeData.memory_limit || challengeData.memoryLimit,
+			tags: challengeData.tags || [],
+			testcases: challengeData.test_cases || challengeData.testcases, // Support both field names
+			starter_code: challengeData.starter_code ? { default: challengeData.starter_code } : {},
+			is_global,
+			lobby_id: is_global ? null : lobby_id,
+			created_by: user.id,
+			// Optional fields from enhanced schema
+			images: challengeData.images || [],
+			hints: challengeData.hints || [],
+			solution_explanation: challengeData.solution_explanation,
+			input_example: challengeData.input_example,
+			output_example: challengeData.output_example
+		};
+
+		// Validate required fields
+		if (!dbChallengeData.title || !dbChallengeData.description) {
+			return json({ error: 'Title and description are required' }, { status: 400 });
+		}
+
 		const { data: challenge, error } = await locals.supabase
 			.from('challenges')
-			.insert({
-				...challengeData,
-				is_global,
-				lobby_id: is_global ? null : lobby_id,
-				created_by: user.id
-			})
+			.insert(dbChallengeData)
 			.select(`
 				*,
 				lobbies (

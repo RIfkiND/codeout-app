@@ -5,11 +5,14 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import MainNavigation from '$lib/components/Header/MainNavigation.svelte';
+	import type { PageData } from './$types';
 
-	export let data;
+	let { data }: { data: PageData } = $props();
 
 	let challenges: any[] = [];
+	let allChallenges: any[] = []; // Store all challenges for client-side filtering
 	let loading = true;
+	let initialLoad = true; // Track if this is the first load
 	let selectedDifficulty = 'all';
 	let selectedStatus = 'all';
 	let selectedCategories: string[] = [];
@@ -24,36 +27,17 @@
 		totalPages: 0
 	};
 
-	async function fetchChallenges() {
+	// Live search functionality
+	async function fetchAllChallenges() {
 		loading = true;
 		try {
-			const params = new URLSearchParams({
-				page: pagination.page.toString(),
-				limit: pagination.limit.toString(),
-				difficulty: selectedDifficulty,
-				status: selectedStatus,
-				sortBy,
-				sortOrder
-			});
-
-			if (searchTerm.trim()) {
-				params.set('search', searchTerm.trim());
-			}
-
-			if (selectedCategories.length > 0) {
-				params.set('categories', selectedCategories.join(','));
-			}
-
-			if (selectedTags.length > 0) {
-				params.set('tags', selectedTags.join(','));
-			}
-
-			const response = await fetch(`/api/challenges?${params.toString()}`);
+			// Fetch all challenges at once for client-side filtering
+			const response = await fetch('/api/challenges?limit=1000&all=true'); // Get all challenges
 			const data = await response.json();
 			
 			if (response.ok) {
-				challenges = data.challenges || [];
-				pagination = data.pagination || pagination;
+				allChallenges = data.challenges || [];
+				applyFilters(); // Apply initial filters
 			} else {
 				console.error('Failed to fetch challenges:', data.error);
 				challenges = [];
@@ -63,28 +47,113 @@
 			challenges = [];
 		} finally {
 			loading = false;
+			initialLoad = false;
 		}
 	}
 
-	onMount(() => {
-		fetchChallenges();
+	// Client-side filtering and sorting (instant, no loading)
+	function applyFilters() {
+		if (allChallenges.length === 0) return;
+
+		let filtered = [...allChallenges];
+
+		// Search filter (instant)
+		if (searchTerm.trim()) {
+			const searchLower = searchTerm.toLowerCase();
+			filtered = filtered.filter(challenge => 
+				challenge.title.toLowerCase().includes(searchLower) ||
+				challenge.description.toLowerCase().includes(searchLower) ||
+				(challenge.tags && challenge.tags.some((tag: string) => tag.toLowerCase().includes(searchLower)))
+			);
+		}
+
+		// Difficulty filter
+		if (selectedDifficulty !== 'all') {
+			filtered = filtered.filter(challenge => challenge.difficulty === selectedDifficulty);
+		}
+
+		// Status filter (you would need to implement user progress tracking)
+		if (selectedStatus !== 'all') {
+			// TODO: Filter based on user's solved/attempted challenges
+		}
+
+		// Category filter
+		if (selectedCategories.length > 0) {
+			filtered = filtered.filter(challenge => 
+				challenge.category && selectedCategories.includes(challenge.category)
+			);
+		}
+
+		// Tag filter
+		if (selectedTags.length > 0) {
+			filtered = filtered.filter(challenge => 
+				challenge.tags && challenge.tags.some((tag: string) => selectedTags.includes(tag))
+			);
+		}
+
+		// Sort
+		filtered.sort((a, b) => {
+			let aVal, bVal;
+			
+			switch (sortBy) {
+				case 'title':
+					aVal = a.title.toLowerCase();
+					bVal = b.title.toLowerCase();
+					break;
+				case 'created_at':
+					aVal = new Date(a.created_at).getTime();
+					bVal = new Date(b.created_at).getTime();
+					break;
+				case 'view_count':
+					aVal = a.view_count || 0;
+					bVal = b.view_count || 0;
+					break;
+				case 'success_rate':
+					aVal = a.success_rate || 0;
+					bVal = b.success_rate || 0;
+					break;
+				default:
+					aVal = a.created_at;
+					bVal = b.created_at;
+			}
+			
+			if (sortOrder === 'asc') {
+				return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+			} else {
+				return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+			}
+		});
+
+		// Update pagination
+		pagination.total = filtered.length;
+		pagination.totalPages = Math.ceil(filtered.length / pagination.limit);
+		pagination.page = Math.min(pagination.page, pagination.totalPages || 1);
+
+		// Apply pagination
+		const startIndex = (pagination.page - 1) * pagination.limit;
+		const endIndex = startIndex + pagination.limit;
+		challenges = filtered.slice(startIndex, endIndex);
+	}
+
+	// Reactive updates for instant filtering
+	$effect(() => {
+		// Watch for changes in filters and apply instantly (only after initial load)
+		if (!initialLoad) {
+			pagination.page = 1; // Reset to first page when filters change
+			applyFilters();
+		}
 	});
 
-	// Debounced search
-	let searchTimeout: ReturnType<typeof setTimeout>;
+	onMount(async () => {
+		await fetchAllChallenges();
+	});
+
+	// Instant search handler (no debounce)
 	function handleSearch(event: Event) {
 		const target = event.target as HTMLInputElement;
 		searchTerm = target.value;
-		
-		clearTimeout(searchTimeout);
-		searchTimeout = setTimeout(() => {
-			pagination.page = 1;
-			fetchChallenges();
-		}, 300);
+		// Filtering happens automatically via $effect
 	}
-
-	// Use challenges directly from API (already filtered server-side)
-	$: filteredChallenges = challenges;
 
 	function getDifficultyColor(difficulty: string) {
 		switch (difficulty) {
@@ -104,45 +173,36 @@
 		}
 	}
 
-	// Filter handlers
+	// Filter handlers (instant updates via reactive $effect)
 	function handleSearchChange(value: string) {
 		searchTerm = value;
-		clearTimeout(searchTimeout);
-		searchTimeout = setTimeout(() => {
-			pagination.page = 1;
-			fetchChallenges();
-		}, 300);
+		// No timeout needed - filtering happens instantly via $effect
 	}
 
 	function handleDifficultyChange(value: string) {
 		selectedDifficulty = value;
-		pagination.page = 1;
-		fetchChallenges();
+		// Filtering happens automatically via $effect
 	}
 
 	function handleStatusChange(value: string) {
 		selectedStatus = value;
-		pagination.page = 1;
-		fetchChallenges();
+		// Filtering happens automatically via $effect
 	}
 
 	function handleCategoryChange(categories: string[]) {
 		selectedCategories = categories;
-		pagination.page = 1;
-		fetchChallenges();
+		// Filtering happens automatically via $effect
 	}
 
 	function handleTagChange(tags: string[]) {
 		selectedTags = tags;
-		pagination.page = 1;
-		fetchChallenges();
+		// Filtering happens automatically via $effect
 	}
 
 	function handleSortChange(newSortBy: string, newSortOrder: string = sortOrder) {
 		sortBy = newSortBy;
 		sortOrder = newSortOrder;
-		pagination.page = 1;
-		fetchChallenges();
+		// Filtering happens automatically via $effect
 	}
 
 	function handleClearAll() {
@@ -153,8 +213,7 @@
 		selectedTags = [];
 		sortBy = 'created_at';
 		sortOrder = 'desc';
-		pagination.page = 1;
-		fetchChallenges();
+		// Filtering happens automatically via $effect
 	}
 </script>
 
@@ -432,7 +491,7 @@
 					<!-- Challenge Cards -->
 					{#if filteredChallenges.length > 0}
 						<div class="space-y-4">
-							{#each filteredChallenges as challenge}
+							{#each challenges as challenge}
 								<Card class="group bg-gradient-to-r from-neutral-900 to-neutral-950 border-neutral-800 hover:border-emerald-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5 cursor-pointer">
 									<CardContent class="p-6">
 										<div class="flex items-start gap-4">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { Search, Filter, X, Check, ChevronDown, Tag, Target, Grid3X3 } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -30,32 +31,53 @@
 		totalChallenges = 0
 	}: FilterProps = $props();
 
-	// Available categories and tags
-	const categories = [
-		{ id: 'algorithms', name: 'Algorithms', icon: '🔀', count: 45 },
-		{ id: 'data-structures', name: 'Data Structures', icon: '📊', count: 38 },
-		{ id: 'dynamic-programming', name: 'Dynamic Programming', icon: '🎯', count: 23 },
-		{ id: 'graph-theory', name: 'Graph Theory', icon: '🕸️', count: 19 },
-		{ id: 'string-manipulation', name: 'String Manipulation', icon: '🔤', count: 32 },
-		{ id: 'mathematics', name: 'Mathematics', icon: '📐', count: 28 },
-		{ id: 'sorting-searching', name: 'Sorting & Searching', icon: '🔍', count: 25 },
-		{ id: 'tree-traversal', name: 'Tree Traversal', icon: '🌳', count: 21 }
-	];
+	// State for categories and tags from database
+	let categories = $state<Array<{ id: string; name: string; description: string | null; count: number; icon?: string }>>([]);
+	let tags = $state<Array<{ id: string; name: string; count: number }>>([]);
+	let loading = $state(true);
 
-	const tags = [
-		{ id: 'array', name: 'Array', count: 56 },
-		{ id: 'hash-table', name: 'Hash Table', count: 34 },
-		{ id: 'linked-list', name: 'Linked List', count: 22 },
-		{ id: 'binary-tree', name: 'Binary Tree', count: 29 },
-		{ id: 'stack', name: 'Stack', count: 18 },
-		{ id: 'queue', name: 'Queue', count: 15 },
-		{ id: 'heap', name: 'Heap', count: 12 },
-		{ id: 'recursion', name: 'Recursion', count: 31 },
-		{ id: 'two-pointers', name: 'Two Pointers', count: 24 },
-		{ id: 'sliding-window', name: 'Sliding Window', count: 16 },
-		{ id: 'backtracking', name: 'Backtracking', count: 14 },
-		{ id: 'greedy', name: 'Greedy', count: 19 }
-	];
+	// Fetch categories and tags from API
+	onMount(async () => {
+		try {
+			const response = await fetch('/api/challenges/filters');
+			const data = await response.json();
+			
+			if (response.ok) {
+				// Add icons to categories (you can customize these)
+				const categoryIcons: Record<string, string> = {
+					'algorithms': '🔀',
+					'data-structures': '📊', 
+					'dynamic-programming': '🎯',
+					'graph-theory': '🕸️',
+					'string-manipulation': '🔤',
+					'mathematics': '📐',
+					'sorting-searching': '🔍',
+					'tree-traversal': '🌳',
+					'array': '📋',
+					'hash-table': '🗂️',
+					'linked-list': '🔗',
+					'binary-tree': '🌲',
+					'stack': '📚',
+					'queue': '📝',
+					'heap': '⛰️',
+					'recursion': '🔄',
+					'backtracking': '↩️',
+					'greedy': '💡'
+				};
+
+				categories = (data.categories || []).map((cat: any) => ({
+					...cat,
+					icon: categoryIcons[cat.name.toLowerCase().replace(/\s+/g, '-')] || '📁'
+				}));
+				tags = data.tags || [];
+				totalChallenges = data.totalChallenges || 0;
+			}
+		} catch (error) {
+			console.error('Failed to fetch filter data:', error);
+		} finally {
+			loading = false;
+		}
+	});
 
 	const difficulties = [
 		{ id: 'all', name: 'All Difficulties', icon: '⚪', count: totalChallenges },
@@ -235,23 +257,38 @@
 							<Grid3X3 class="w-4 h-4 text-emerald-400" />
 							Categories
 						</h3>
-						<div class="space-y-2 max-h-64 overflow-y-auto pr-2">
-							{#each categories as category}
-								<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-800/50 cursor-pointer transition-colors">
-									<input
-										type="checkbox"
-										checked={selectedCategories.includes(category.id)}
-										onchange={() => toggleCategory(category.id)}
-										class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500 focus:ring-2"
-									/>
-									<span class="text-base">{category.icon}</span>
-									<div class="flex-1 min-w-0">
-										<div class="font-medium text-sm text-neutral-200 truncate">{category.name}</div>
-										<div class="text-xs text-neutral-500">({category.count})</div>
+						{#if loading}
+							<div class="space-y-2">
+								{#each Array(6) as _, i}
+									<div class="flex items-center gap-3 p-2 rounded-lg animate-pulse">
+										<div class="w-4 h-4 bg-neutral-700 rounded"></div>
+										<div class="w-4 h-4 bg-neutral-700 rounded"></div>
+										<div class="flex-1">
+											<div class="h-3 bg-neutral-700 rounded mb-1"></div>
+											<div class="h-2 bg-neutral-800 rounded w-1/3"></div>
+										</div>
 									</div>
-								</label>
-							{/each}
-						</div>
+								{/each}
+							</div>
+						{:else}
+							<div class="space-y-2 max-h-64 overflow-y-auto pr-2">
+								{#each categories as category}
+									<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-800/50 cursor-pointer transition-colors">
+										<input
+											type="checkbox"
+											checked={selectedCategories.includes(category.id)}
+											onchange={() => toggleCategory(category.id)}
+											class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500 focus:ring-2"
+										/>
+										<span class="text-base">{category.icon}</span>
+										<div class="flex-1 min-w-0">
+											<div class="font-medium text-sm text-neutral-200 truncate">{category.name}</div>
+											<div class="text-xs text-neutral-500">({category.count})</div>
+										</div>
+									</label>
+								{/each}
+							</div>
+						{/if}
 					</div>
 
 					<!-- Right Columns - Tags -->
@@ -260,40 +297,67 @@
 							<Tag class="w-4 h-4 text-emerald-400" />
 							Tags & Topics
 						</h3>
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-							<div class="space-y-2 max-h-64 overflow-y-auto pr-2">
-								{#each tags.slice(0, Math.ceil(tags.length / 2)) as tag}
-									<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-800/50 cursor-pointer transition-colors">
-										<input
-											type="checkbox"
-											checked={selectedTags.includes(tag.id)}
-											onchange={() => toggleTag(tag.id)}
-											class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500 focus:ring-2"
-										/>
-										<div class="flex-1 min-w-0">
-											<div class="font-medium text-sm text-neutral-200 truncate">{tag.name}</div>
-											<div class="text-xs text-neutral-500">({tag.count})</div>
+						{#if loading}
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+								<div class="space-y-2">
+									{#each Array(6) as _, i}
+										<div class="flex items-center gap-3 p-2 rounded-lg animate-pulse">
+											<div class="w-4 h-4 bg-neutral-700 rounded"></div>
+											<div class="flex-1">
+												<div class="h-3 bg-neutral-700 rounded mb-1"></div>
+												<div class="h-2 bg-neutral-800 rounded w-1/4"></div>
+											</div>
 										</div>
-									</label>
-								{/each}
-							</div>
-							<div class="space-y-2 max-h-64 overflow-y-auto pr-2">
-								{#each tags.slice(Math.ceil(tags.length / 2)) as tag}
-									<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-800/50 cursor-pointer transition-colors">
-										<input
-											type="checkbox"
-											checked={selectedTags.includes(tag.id)}
-											onchange={() => toggleTag(tag.id)}
-											class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500 focus:ring-2"
-										/>
-										<div class="flex-1 min-w-0">
-											<div class="font-medium text-sm text-neutral-200 truncate">{tag.name}</div>
-											<div class="text-xs text-neutral-500">({tag.count})</div>
+									{/each}
+								</div>
+								<div class="space-y-2">
+									{#each Array(6) as _, i}
+										<div class="flex items-center gap-3 p-2 rounded-lg animate-pulse">
+											<div class="w-4 h-4 bg-neutral-700 rounded"></div>
+											<div class="flex-1">
+												<div class="h-3 bg-neutral-700 rounded mb-1"></div>
+												<div class="h-2 bg-neutral-800 rounded w-1/4"></div>
+											</div>
 										</div>
-									</label>
-								{/each}
+									{/each}
+								</div>
 							</div>
-						</div>
+						{:else}
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+								<div class="space-y-2 max-h-64 overflow-y-auto pr-2">
+									{#each tags.slice(0, Math.ceil(tags.length / 2)) as tag}
+										<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-800/50 cursor-pointer transition-colors">
+											<input
+												type="checkbox"
+												checked={selectedTags.includes(tag.id)}
+												onchange={() => toggleTag(tag.id)}
+												class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500 focus:ring-2"
+											/>
+											<div class="flex-1 min-w-0">
+												<div class="font-medium text-sm text-neutral-200 truncate">{tag.name}</div>
+												<div class="text-xs text-neutral-500">({tag.count})</div>
+											</div>
+										</label>
+									{/each}
+								</div>
+								<div class="space-y-2 max-h-64 overflow-y-auto pr-2">
+									{#each tags.slice(Math.ceil(tags.length / 2)) as tag}
+										<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-800/50 cursor-pointer transition-colors">
+											<input
+												type="checkbox"
+												checked={selectedTags.includes(tag.id)}
+												onchange={() => toggleTag(tag.id)}
+												class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500 focus:ring-2"
+											/>
+											<div class="flex-1 min-w-0">
+												<div class="font-medium text-sm text-neutral-200 truncate">{tag.name}</div>
+												<div class="text-xs text-neutral-500">({tag.count})</div>
+											</div>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>

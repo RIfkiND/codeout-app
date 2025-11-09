@@ -9,7 +9,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
 
-		const { language, code, challengeId } = await request.json();
+		const { language, code, challengeId, lobbyId } = await request.json();
 
 		if (!language || !code || !challengeId) {
 			return json({ error: 'Language, code, and challengeId are required' }, { status: 400 });
@@ -45,14 +45,32 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				execution_time: result.execution_time,
 				memory_usage: result.memory_used,
 				passed_test_cases: result.test_cases_passed,
-				total_test_cases: result.total_test_cases
+				total_test_cases: result.total_test_cases,
+				...(lobbyId && { lobby_id: lobbyId }) // Add lobby_id if this is a multiplayer submission
 			};
+			
 			const { error: submissionError } = await (locals.supabase
 				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })
 				.insert(submissionData);
 
 			if (submissionError) {
 				console.error('Failed to save submission:', submissionError);
+			}
+
+			// Check if this is the first solution in a lobby
+			let isFirstToSolve = false;
+			if (lobbyId && allTestsPassed) {
+				const { data: previousSolutions } = await locals.supabase
+					.from('submissions')
+					.select('id')
+					.eq('lobby_id', lobbyId)
+					.eq('challenge_id', challengeId)
+					.eq('status', 'accepted')
+					.order('created_at', { ascending: true })
+					.limit(1);
+
+				// If this is the only accepted solution, they're the first to solve
+				isFirstToSolve = previousSolutions?.length === 1;
 			}
 			
 			return json({
@@ -64,7 +82,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				testResults: result.test_cases,
 				allTestsPassed,
 				passedCount: result.test_cases_passed,
-				totalCount: result.total_test_cases
+				totalCount: result.total_test_cases,
+				isFirstToSolve,
+				isMultiplayer: !!lobbyId
 			});
 			
 		} catch (executionError) {
@@ -80,7 +100,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				execution_time: null,
 				memory_usage: null,
 				passed_test_cases: 0,
-				total_test_cases: testCases.length
+				total_test_cases: testCases.length,
+				...(lobbyId && { lobby_id: lobbyId }) // Add lobby_id if this is a multiplayer submission
 			};
 			const { error: submissionError } = await (locals.supabase
 				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })
@@ -99,7 +120,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				testResults: [],
 				allTestsPassed: false,
 				passedCount: 0,
-				totalCount: testCases.length
+				totalCount: testCases.length,
+				isFirstToSolve: false,
+				isMultiplayer: !!lobbyId
 			});
 		}
 		

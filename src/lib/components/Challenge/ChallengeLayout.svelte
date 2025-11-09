@@ -9,6 +9,9 @@
 	export let challengeId: string | null = null;
 	export let challenge: any = null;
 	export let editable: boolean = false;
+	export let lobbyId: string | null = null;
+	export let lobby: any = null;
+	export let timeRemaining: number = 0;
 
 	let challenges: any[] = [];
 	let selectedChallengeId = challengeId;
@@ -106,16 +109,24 @@
 		
 		try {
 			// First run the code to get test results
+			const executePayload: any = {
+				code: event.detail.code,
+				language: event.detail.language,
+				challengeId: selectedChallengeId
+			};
+
+			// Add lobby context if this is a multiplayer session
+			if (lobbyId) {
+				executePayload.lobbyId = lobbyId;
+				executePayload.isMultiplayer = true;
+			}
+
 			const response = await fetch('/api/code/execute', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({
-					code: event.detail.code,
-					language: event.detail.language,
-					challengeId: selectedChallengeId
-				})
+				body: JSON.stringify(executePayload)
 			});
 			
 			const result = await response.json();
@@ -135,11 +146,26 @@
 					total_score: result.allTestsPassed ? '100/100' : `${Math.round((result.passedCount || 0) / (result.totalCount || 1) * 100)}/100`
 				};
 				
-				// Show submission result
-				if (result.allTestsPassed) {
-					alert('🎉 Congratulations! All test cases passed. Solution submitted successfully!');
+				// Show submission result based on context
+				if (lobbyId && lobby) {
+					// Multiplayer submission
+					if (result.allTestsPassed) {
+						alert('🎉 Perfect! All test cases passed in the lobby challenge!');
+						
+						// Check if this is the winning submission
+						if (result.isFirstToSolve) {
+							alert('🏆 Congratulations! You are the first to solve this challenge in the lobby!');
+						}
+					} else {
+						alert(`⚠️ ${result.passedCount || 0}/${result.totalCount || 0} test cases passed. Time remaining: ${formatTimeFromMs(timeRemaining)}. Keep trying!`);
+					}
 				} else {
-					alert(`⚠️ ${result.passedCount || 0}/${result.totalCount || 0} test cases passed. Keep trying!`);
+					// Single player submission
+					if (result.allTestsPassed) {
+						alert('🎉 Congratulations! All test cases passed. Solution submitted successfully!');
+					} else {
+						alert(`⚠️ ${result.passedCount || 0}/${result.totalCount || 0} test cases passed. Keep trying!`);
+					}
 				}
 			} else {
 				alert('❌ Submission failed: ' + (result.error || 'Unknown error'));
@@ -150,6 +176,13 @@
 		} finally {
 			isSubmitting = false;
 		}
+	}
+
+	function formatTimeFromMs(milliseconds: number): string {
+		const totalSeconds = Math.floor(milliseconds / 1000);
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 	}
 
 	function handleMouseDown() {
@@ -185,9 +218,9 @@
 
 <div class="h-screen bg-neutral-900 flex flex-col">
 	<!-- Top Navigation Bar -->
-	<nav class="bg-neutral-900 border-b border-neutral-700 px-6 py-3 flex items-center justify-between">
-		<div class="flex items-center gap-4">
-			<a href="/" class="text-xl font-bold text-neutral-100">CodeOut</a>
+	<nav class="bg-neutral-900 border-b border-neutral-700 px-4 py-2 flex items-center justify-between">
+		<div class="flex items-center gap-6">
+			<a href="/" class="text-lg font-bold text-neutral-100">CodeOut</a>
 			<span class="text-neutral-500">|</span>
 			
 			<!-- Challenge Selector -->
@@ -198,17 +231,17 @@
 			/>
 		</div>
 		
-		<div class="flex items-center gap-4">
-			<button class="flex items-center gap-2 text-gray-300 hover:text-white px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">
-				<Lightbulb size={16} />
+		<div class="flex items-center gap-2">
+			<button class="flex items-center gap-1.5 text-gray-300 hover:text-white px-2.5 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
+				<Lightbulb size={14} />
 				Hint
 			</button>
-			<button class="flex items-center gap-2 text-gray-300 hover:text-white px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">
-				<MessageCircle size={16} />
+			<button class="flex items-center gap-1.5 text-gray-300 hover:text-white px-2.5 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
+				<MessageCircle size={14} />
 				Discuss
 			</button>
-			<button class="flex items-center gap-2 text-gray-300 hover:text-white px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">
-				<Settings size={16} />
+			<button class="flex items-center gap-1.5 text-gray-300 hover:text-white px-2.5 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
+				<Settings size={14} />
 				Settings
 			</button>
 		</div>
