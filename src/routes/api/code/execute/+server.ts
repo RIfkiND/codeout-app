@@ -1,61 +1,133 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { PISTON_API_URL } from '$env/static/private';
+import { pistonService } from '$lib/services/pistonService';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
-		// Check if user is authenticated
 		const { session } = await locals.safeGetSession();
 		if (!session) {
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
 
-		const { language, version, code, input } = await request.json();
+		const { language, code, challengeId, lobbyId } = await request.json();
 
-		if (!language || !code) {
-			return json({ error: 'Language and code are required' }, { status: 400 });
+		if (!language || !code || !challengeId) {
+			return json({ error: 'Language, code, and challengeId are required' }, { status: 400 });
 		}
 
-		const response = await fetch(`${PISTON_API_URL}/execute`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				language,
-				version: version || 'latest',
-				files: [
-					{
-						content: code
-					}
-				],
-				stdin: input || ''
-			})
-		});
-
-		if (!response.ok) {
-			throw new Error(`Piston API error: ${response.statusText}`);
+		// Get challenge test cases from database
+		const { data: challenge, error: challengeError } = await locals.supabase
+			.from('challenges')
+			.select('testcases, title')
+			.eq('id', challengeId)
+			.single();
+		
+		if (challengeError || !challenge) {
+			return json({ error: 'Challenge not found' }, { status: 404 });
 		}
 
-		const result = await response.json();
+		const challengeData = challenge as { testcases: Array<{ input: Record<string, unknown>; output: unknown }> };
+		const testCases = challengeData.testcases;
 
-		return json({
-			success: true,
-			output: result.run?.output || '',
-			stderr: result.run?.stderr || '',
-			stdout: result.run?.stdout || '',
-			code: result.run?.code || 0,
-			language,
-			version: result.version || version
-		});
-	} catch (error) {
-		console.error('Code execution error:', error);
-		return json(
-			{
+		// Execute code using Piston service
+		try {
+			const result = await pistonService.runTestCases(code, language, testCases);
+			
+			const allTestsPassed = result.test_cases_passed === result.total_test_cases;
+			
+			// Save submission to database
+			const submissionData = {
+				user_id: session.user.id,
+				challenge_id: challengeId as string,
+				language: language as string,
+				code: code as string,
+				status: allTestsPassed ? 'accepted' : 'wrong_answer',
+				execution_time: result.execution_time,
+				memory_usage: result.memory_used,
+				passed_test_cases: result.test_cases_passed,
+				total_test_cases: result.total_test_cases,
+				...(lobbyId && { lobby_id: lobbyId }) // Add lobby_id if this is a multiplayer submission
+			};
+			
+			const { error: submissionError } = await (locals.supabase
+				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })
+				.insert(submissionData);
+
+			if (submissionError) {
+				console.error('Failed to save submission:', submissionError);
+			}
+
+			// Check if this is the first solution in a lobby
+			let isFirstToSolve = false;
+			if (lobbyId && allTestsPassed) {
+				const { data: previousSolutions } = await locals.supabase
+					.from('submissions')
+					.select('id')
+					.eq('lobby_id', lobbyId)
+					.eq('challenge_id', challengeId)
+					.eq('status', 'accepted')
+					.order('created_at', { ascending: true })
+					.limit(1);
+
+				// If this is the only accepted solution, they're the first to solve
+				isFirstToSolve = previousSolutions?.length === 1;
+			}
+			
+			return json({
+				success: true,
+				output: result.test_cases.map(tc => `Test ${tc.id}: ${tc.passed ? 'PASSED' : 'FAILED'} (${tc.time})\n${tc.passed ? '' : `Expected: ${tc.expected}, Got: ${tc.actual}`}`).join('\n'),
+				error: result.error_message,
+				executionTime: result.execution_time,
+				memory: result.memory_used,
+				testResults: result.test_cases,
+				allTestsPassed,
+				passedCount: result.test_cases_passed,
+				totalCount: result.total_test_cases,
+				isFirstToSolve,
+				isMultiplayer: !!lobbyId
+			});
+			
+		} catch (executionError) {
+			console.error('Code execution error:', executionError);
+			
+			// Save failed submission
+			const failedSubmissionData = {
+				user_id: session.user.id,
+				challenge_id: challengeId as string,
+				language: language as string,
+				code: code as string,
+				status: 'runtime_error',
+				execution_time: null,
+				memory_usage: null,
+				passed_test_cases: 0,
+				total_test_cases: testCases.length,
+				...(lobbyId && { lobby_id: lobbyId }) // Add lobby_id if this is a multiplayer submission
+			};
+			const { error: submissionError } = await (locals.supabase
+				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })
+				.insert(failedSubmissionData);
+
+			if (submissionError) {
+				console.error('Failed to save failed submission:', submissionError);
+			}
+			
+			return json({
 				success: false,
-				error: error instanceof Error ? error.message : 'Unknown error occurred'
-			},
-			{ status: 500 }
-		);
+				output: '',
+				error: executionError instanceof Error ? executionError.message : 'Code execution failed',
+				executionTime: 0,
+				memory: 0,
+				testResults: [],
+				allTestsPassed: false,
+				passedCount: 0,
+				totalCount: testCases.length,
+				isFirstToSolve: false,
+				isMultiplayer: !!lobbyId
+			});
+		}
+		
+	} catch (error) {
+		console.error('API error:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
 	}
 };

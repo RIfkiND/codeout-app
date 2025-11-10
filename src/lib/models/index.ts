@@ -1,9 +1,31 @@
-// Re-export all model types for easy importing
-export * from './database';
-export * from './user';
-export * from './challenge';
-export * from './lobby';
-export * from './submission';
+// Re-export core types without conflicts
+export type { 
+  // Database
+  Database, Json, DifficultyLevel, LobbyStatus, SessionStatus, UserRole,
+  
+  // Core entities
+  User, UserInsert, UserUpdate, UserProfile, UserProfileInsert, UserProfileUpdate,
+  Challenge, ChallengeInsert, ChallengeUpdate,
+  Lobby, LobbyInsert, LobbyUpdate, LobbyUser, LobbyUserInsert, LobbyUserUpdate,
+  Submission, SubmissionInsert, SubmissionUpdate,
+  Category, CategoryInsert, CategoryUpdate,
+  ChallengeCategory, ChallengeCategoryInsert, ChallengeCategoryUpdate,
+  SinglePlayerSession, SinglePlayerSessionInsert, SinglePlayerSessionUpdate,
+  ProgrammingLanguage, ProgrammingLanguageInsert, ProgrammingLanguageUpdate,
+  MediaFile, MediaFileInsert, MediaFileUpdate,
+  
+  // Extended types
+  UserWithProfile, LobbyWithUsers, ChallengeWithCategories
+} from './database';
+
+// Re-export specific types from other files without conflicts
+export type { 
+  LobbyWithCreator, LobbyParticipant 
+} from './lobby';
+
+export type { 
+  SubmissionWithUser, SubmissionWithChallenge, SupportedLanguage
+} from './submission';
 
 // Common utility types
 export interface PaginationParams {
