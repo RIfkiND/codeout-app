@@ -276,7 +276,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				.eq('id', user.id)
 				.single();
 
-			if (!userData || userData.role !== 'admin') {
+			if (!userData || (userData as { role: string }).role !== 'admin') {
 				return json({ error: 'Only admins can create global challenges' }, { status: 403 });
 			}
 
@@ -295,7 +295,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				.eq('id', lobby_id)
 				.single();
 
-			if (!lobby || lobby.created_by !== user.id) {
+			if (!lobby || (lobby as { created_by: string }).created_by !== user.id) {
 				return json({ error: 'You can only create challenges for lobbies you own' }, { status: 403 });
 			}
 		}
@@ -328,7 +328,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const { data: challenge, error } = await locals.supabase
 			.from('challenges')
-			.insert(dbChallengeData)
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			.insert(dbChallengeData as any)
 			.select(`
 				*,
 				lobbies (

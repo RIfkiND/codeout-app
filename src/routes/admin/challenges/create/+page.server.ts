@@ -29,7 +29,7 @@ export const actions: Actions = {
 				.eq('id', user.id)
 				.single();
 
-			if (!userData || userData.role !== 'admin') {
+			if (!userData || (userData as { role: string }).role !== 'admin') {
 				return fail(403, { error: 'Admin access required' });
 			}
 
@@ -48,6 +48,7 @@ export const actions: Actions = {
 				title: formData.get('title')?.toString(),
 				description: formData.get('description')?.toString(),
 				difficulty: formData.get('difficulty')?.toString(),
+				category: formData.get('category')?.toString() || null,
 				time_limit: parseInt(formData.get('time_limit')?.toString() || '1000'),
 				memory_limit: parseInt(formData.get('memory_limit')?.toString() || '256'),
 				tags: formData.get('tags')?.toString()?.split(',').map(tag => tag.trim()).filter(Boolean) || [],

@@ -19,17 +19,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const totalChallenges = challengesData?.length || 0;
 		const totalUsers = usersData?.length || 0;
 		const totalSubmissions = submissionsData?.length || 0;
-		const activeLobbie = lobbiesData?.filter(l => l.status === 'active').length || 0;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const activeLobbie = (lobbiesData as any[])?.filter((l: any) => l.status === 'active').length || 0;
 
 		// Calculate difficulty distribution
 		const difficultyStats = {
-			easy: challengesData?.filter(c => c.difficulty === 'easy').length || 0,
-			medium: challengesData?.filter(c => c.difficulty === 'medium').length || 0,
-			hard: challengesData?.filter(c => c.difficulty === 'hard').length || 0
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			easy: (challengesData as any[])?.filter((c: any) => c.difficulty === 'easy').length || 0,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			medium: (challengesData as any[])?.filter((c: any) => c.difficulty === 'medium').length || 0,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			hard: (challengesData as any[])?.filter((c: any) => c.difficulty === 'hard').length || 0
 		};
 
 		// Calculate success rate
-		const correctSubmissions = submissionsData?.filter(s => s.is_correct).length || 0;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const correctSubmissions = (submissionsData as any[])?.filter((s: any) => s.is_correct).length || 0;
 		const successRate = totalSubmissions > 0 ? (correctSubmissions / totalSubmissions) * 100 : 0;
 
 		// Recent activities

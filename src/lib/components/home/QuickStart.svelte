@@ -139,7 +139,6 @@ const difficultyLevels = [
     <!-- Quick Actions Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
       {#each quickActions as action}
-        {@const ActionIcon = action.icon}
         <Card class="bg-neutral-900/80 border-neutral-800 hover:border-neutral-700 transition-all duration-300 hover:shadow-2xl group overflow-hidden relative">
           <!-- Gradient Background -->
           <div class="absolute inset-0 bg-gradient-to-br {action.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
@@ -147,7 +146,7 @@ const difficultyLevels = [
           <CardHeader class="pb-4 relative">
             <div class="flex items-center gap-4 mb-3">
               <div class="p-3 rounded-xl bg-gradient-to-br {action.gradient} shadow-lg">
-                <ActionIcon class="w-6 h-6 text-white" />
+                <svelte:component this={action.icon} class="w-6 h-6 text-white" />
               </div>
               <Badge variant="outline" class="border-neutral-600 text-neutral-400">
                 {action.stats}
@@ -187,11 +186,10 @@ const difficultyLevels = [
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {#each difficultyLevels as level}
-          {@const LevelIcon = level.icon}
           <Card class="bg-neutral-900/50 border-neutral-800 hover:border-neutral-700 transition-all duration-300 hover:shadow-xl group {level.borderColor} hover:shadow-{level.color}/5">
             <CardHeader class="text-center pb-4">
               <div class="mx-auto mb-4 p-4 rounded-2xl {level.bgColor} w-fit">
-                <LevelIcon class="w-8 h-8 {level.color}" />
+                <svelte:component this={level.icon} class="w-8 h-8 {level.color}" />
               </div>
               <CardTitle class="text-xl font-bold text-neutral-100 group-hover:text-white transition-colors">
                 {level.name}
@@ -245,12 +243,11 @@ const difficultyLevels = [
           { name: 'Data Structures', icon: Code2, color: 'text-green-400' },
           { name: 'Dynamic Programming', icon: Zap, color: 'text-yellow-400' }
         ] as category}
-          {@const CategoryIcon = category.icon}
           <button 
             onclick={() => window.location.href = user ? `/challenge?category=${category.name.toLowerCase()}` : '/auth/login'}
             class="p-4 rounded-xl bg-neutral-800/50 border border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800 transition-all duration-200 group text-left"
           >
-            <CategoryIcon class="w-5 h-5 {category.color} mb-2" />
+            <svelte:component this={category.icon} class="w-5 h-5 {category.color} mb-2" />
             <div class="text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">
               {category.name}
             </div>

@@ -5,7 +5,7 @@ import { LogOut, Settings, User } from 'lucide-svelte';
 
 interface User {
 	id: string;
-	username?: string;
+	name?: string;
 	email?: string;
 	role: string;
 }
@@ -39,7 +39,7 @@ async function handleLogout() {
 		<div class="flex items-center space-x-4">
 			<div class="flex items-center space-x-2">
 				<User class="h-4 w-4 text-neutral-400" />
-				<span class="text-sm text-neutral-300">{user.username || user.email}</span>
+				<span class="text-sm text-neutral-300">{user.name || user.email}</span>
 				<Badge variant="outline" class="text-xs border-emerald-500/30 text-emerald-400">
 					{user.role}
 				</Badge>

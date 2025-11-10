@@ -82,8 +82,7 @@ const handleJoinClick = () => {
       {/if}
     </div>
     <Badge class={getStatusColor(lobby.status)}>
-      {@const StatusIcon = getStatusIcon(lobby.status)}
-      <StatusIcon class="w-3 h-3 mr-1" />
+      <svelte:component this={getStatusIcon(lobby.status)} class="w-3 h-3 mr-1" />
       {lobby.status}
     </Badge>
   </div>

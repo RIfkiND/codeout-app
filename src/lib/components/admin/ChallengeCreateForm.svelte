@@ -4,11 +4,10 @@ import { Button } from '$lib/components/ui/button';
 import { Card } from '$lib/components/ui/card';
 import { Input } from '$lib/components/ui/input';
 import { Label } from '$lib/components/ui/label';
-import { Textarea } from '$lib/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '$lib/components/ui/select';
 import { Badge } from '$lib/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
-import { Plus, Trash2, Save, Eye } from 'lucide-svelte';
+import WysiwygEditor from '$lib/components/Editor/WysiwygEditor.svelte';
+import { Plus, Trash2, Save, Eye, X, Hash, Tag } from 'lucide-svelte';
 
 interface Language {
 	id: string;
@@ -29,6 +28,7 @@ let { languages }: { languages: Language[] } = $props();
 let title = $state('');
 let description = $state('');
 let difficulty = $state('easy');
+let category = $state('');
 let tagInput = $state('');
 let tags: string[] = $state([]);
 let timeLimit = $state(1000);
@@ -40,16 +40,57 @@ let testCases: TestCase[] = $state([
 ]);
 let submitting = $state(false);
 
-const difficulties = [
-	{ value: 'easy', label: 'Easy', color: 'bg-green-500/20 text-green-400' },
-	{ value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-400' },
-	{ value: 'hard', label: 'Hard', color: 'bg-red-500/20 text-red-400' }
+// Predefined categories and tags
+const categories = [
+	'Algorithms',
+	'Data Structures',
+	'Dynamic Programming',
+	'Graph Theory',
+	'String Manipulation',
+	'Array/List',
+	'Tree/Binary Tree',
+	'Sorting',
+	'Searching',
+	'Mathematics',
+	'Greedy',
+	'Recursion',
+	'Bit Manipulation',
+	'Hash Table',
+	'Stack/Queue',
+	'Linked List',
+	'Two Pointers',
+	'Sliding Window',
+	'Binary Search',
+	'Backtracking'
 ];
 
-function addTag() {
-	const tag = tagInput.trim();
-	if (tag && !tags.includes(tag)) {
-		tags = [...tags, tag];
+const commonTags = [
+	'beginner-friendly',
+	'interview-prep',
+	'leetcode-style',
+	'optimization',
+	'complexity-analysis',
+	'edge-cases',
+	'mathematical',
+	'pattern-matching',
+	'problem-solving',
+	'competitive-programming',
+	'real-world',
+	'debugging',
+	'implementation',
+	'logic-puzzle'
+];
+
+const difficulties = [
+	{ value: 'easy', label: 'Easy', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
+	{ value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+	{ value: 'hard', label: 'Hard', color: 'bg-red-500/20 text-red-400 border-red-500/30' }
+];
+
+function addTag(tag?: string) {
+	const tagToAdd = tag || tagInput.trim();
+	if (tagToAdd && !tags.includes(tagToAdd)) {
+		tags = [...tags, tagToAdd];
 		tagInput = '';
 	}
 }
@@ -104,20 +145,11 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 				
 				<div>
 					<Label for="difficulty" class="text-neutral-300">Difficulty</Label>
-					<Select name="difficulty" bind:value={difficulty}>
-						<SelectTrigger class="bg-neutral-800 border-neutral-700 text-neutral-100">
-							<SelectValue placeholder="Select difficulty" />
-						</SelectTrigger>
-						<SelectContent class="bg-neutral-800 border-neutral-700">
-							{#each difficulties as diff}
-								<SelectItem value={diff.value} class="text-neutral-100 hover:bg-neutral-700">
-									<div class="flex items-center space-x-2">
-										<Badge class="{diff.color} text-xs">{diff.label}</Badge>
-									</div>
-								</SelectItem>
-							{/each}
-						</SelectContent>
-					</Select>
+					<select name="difficulty" bind:value={difficulty} class="bg-neutral-800 border-neutral-700 text-neutral-100 w-full rounded-md px-3 py-2">
+						{#each difficulties as diff}
+							<option value={diff.value}>{diff.label}</option>
+						{/each}
+					</select>
 				</div>
 				
 				<div>
@@ -145,66 +177,127 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 						class="bg-neutral-800 border-neutral-700 text-neutral-100"
 					/>
 				</div>
-			</div>
-			
-			<!-- Tags -->
-			<div class="mt-6">
-				<Label for="tags" class="text-neutral-300">Tags</Label>
-				<div class="flex space-x-2 mt-2">
-					<Input
-						bind:value={tagInput}
-						placeholder="Add tags..."
-						class="bg-neutral-800 border-neutral-700 text-neutral-100"
-						onkeydown={(e) => {
-							if (e.key === 'Enter') {
-								e.preventDefault();
-								addTag();
-							}
-						}}
-					/>
-					<Button type="button" onclick={addTag} variant="outline" class="border-neutral-700">
-						<Plus class="h-4 w-4" />
-					</Button>
+				
+				<div class="md:col-span-2">
+					<Label for="category" class="text-neutral-300">Category</Label>
+					<select 
+						name="category" 
+						bind:value={category} 
+						class="bg-neutral-800 border-neutral-700 text-neutral-100 w-full rounded-md px-3 py-2"
+					>
+						<option value="">Select a category...</option>
+						{#each categories as cat}
+							<option value={cat}>{cat}</option>
+						{/each}
+					</select>
+					{#if category === ''}
+						<Input
+							placeholder="Or enter custom category..."
+							class="bg-neutral-800 border-neutral-700 text-neutral-100 mt-2"
+							bind:value={category}
+						/>
+					{/if}
 				</div>
+			</div>
+		</Card>
+
+		<!-- Description -->
+		<Card class="bg-neutral-900 border-neutral-800 p-6">
+			<h2 class="text-xl font-semibold text-neutral-100 mb-6 flex items-center gap-2">
+				<Eye class="h-5 w-5" />
+				Challenge Description
+			</h2>
+			<div class="space-y-4">
+				<Label class="text-neutral-300">
+					Write a comprehensive description of the challenge. Include problem statement, constraints, examples, and any special instructions.
+				</Label>
+				<WysiwygEditor
+					bind:content={description}
+					placeholder="Describe your challenge in detail..."
+				/>
+				<input type="hidden" name="description" value={description} />
+			</div>
+		</Card>
+
+		<!-- Tags Management -->
+		<Card class="bg-neutral-900 border-neutral-800 p-6">
+			<h2 class="text-xl font-semibold text-neutral-100 mb-6 flex items-center gap-2">
+				<Tag class="h-5 w-5" />
+				Tags & Categories
+			</h2>
+			
+			<!-- Tag Input -->
+			<div class="space-y-4">
+				<div>
+					<Label for="tags" class="text-neutral-300">Add Custom Tags</Label>
+					<div class="flex space-x-2 mt-2">
+						<Input
+							bind:value={tagInput}
+							placeholder="Enter custom tag..."
+							class="bg-neutral-800 border-neutral-700 text-neutral-100"
+							on:keydown={(e) => {
+								if (e.key === 'Enter') {
+									e.preventDefault();
+									addTag();
+								}
+							}}
+						/>
+						<Button type="button" onclick={() => addTag()} variant="outline" class="border-neutral-700">
+							<Plus class="h-4 w-4" />
+						</Button>
+					</div>
+				</div>
+
+				<!-- Common Tags -->
+				<div>
+					<Label class="text-neutral-300">Quick Add Tags</Label>
+					<div class="flex flex-wrap gap-2 mt-2">
+						{#each commonTags as tag}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+								onclick={() => addTag(tag)}
+								disabled={tags.includes(tag)}
+							>
+								<Hash class="h-3 w-3 mr-1" />
+								{tag}
+							</Button>
+						{/each}
+					</div>
+				</div>
+
+				<!-- Selected Tags -->
 				<input type="hidden" name="tags" value={tags.join(',')} />
 				{#if tags.length > 0}
-					<div class="flex flex-wrap gap-2 mt-3">
-						{#each tags as tag}
-							<Badge class="bg-neutral-800 text-neutral-300 border-neutral-600">
-								{tag}
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									class="h-auto p-0 ml-1 text-neutral-400 hover:text-red-400"
-									onclick={() => removeTag(tag)}
-								>
-									<Trash2 class="h-3 w-3" />
-								</Button>
-							</Badge>
-						{/each}
+					<div>
+						<Label class="text-neutral-300">Selected Tags ({tags.length})</Label>
+						<div class="flex flex-wrap gap-2 mt-2">
+							{#each tags as tag}
+								<Badge class="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+									{tag}
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										class="h-auto p-0 ml-2 text-emerald-400 hover:text-red-400"
+										onclick={() => removeTag(tag)}
+									>
+										<X class="h-3 w-3" />
+									</Button>
+								</Badge>
+							{/each}
+						</div>
 					</div>
 				{/if}
 			</div>
 		</Card>
-		
-		<!-- Description -->
-		<Card class="bg-neutral-900 border-neutral-800 p-6">
-			<h2 class="text-xl font-semibold text-neutral-100 mb-6">Problem Description</h2>
-			<Textarea
-				name="description"
-				bind:value={description}
-				placeholder="Describe the problem, constraints, examples..."
-				rows={10}
-				class="bg-neutral-800 border-neutral-700 text-neutral-100"
-				required
-			/>
-		</Card>
-		
+
 		<!-- Code Templates -->
 		<Card class="bg-neutral-900 border-neutral-800 p-6">
 			<h2 class="text-xl font-semibold text-neutral-100 mb-6">Code Templates</h2>
-			<Tabs defaultValue="starter" class="w-full">
+			<Tabs value="starter" class="w-full">
 				<TabsList class="bg-neutral-800 border-neutral-700">
 					<TabsTrigger value="starter" class="text-neutral-300">Starter Code</TabsTrigger>
 					<TabsTrigger value="solution" class="text-neutral-300">Solution Code</TabsTrigger>
@@ -263,7 +356,7 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 								<Label class="text-neutral-400">Input</Label>
 								<Textarea
 									value={testCase.input}
-									oninput={(e) => updateTestCase(index, 'input', e.target?.value || '')}
+									oninput={(e: Event) => updateTestCase(index, 'input', (e.target as HTMLTextAreaElement)?.value || '')}
 									placeholder="Test input..."
 									rows={3}
 									class="bg-neutral-800 border-neutral-700 text-neutral-100 font-mono text-sm"
@@ -273,7 +366,7 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 								<Label class="text-neutral-400">Expected Output</Label>
 								<Textarea
 									value={testCase.output}
-									oninput={(e) => updateTestCase(index, 'output', e.target?.value || '')}
+									oninput={(e: Event) => updateTestCase(index, 'output', (e.target as HTMLTextAreaElement)?.value || '')}
 									placeholder="Expected output..."
 									rows={3}
 									class="bg-neutral-800 border-neutral-700 text-neutral-100 font-mono text-sm"
@@ -285,7 +378,7 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 							<Label class="text-neutral-400">Explanation (Optional)</Label>
 							<Textarea
 								value={testCase.explanation || ''}
-								oninput={(e) => updateTestCase(index, 'explanation', e.target?.value || '')}
+								oninput={(e: Event) => updateTestCase(index, 'explanation', (e.target as HTMLTextAreaElement)?.value || '')}
 								placeholder="Explain this test case..."
 								rows={2}
 								class="bg-neutral-800 border-neutral-700 text-neutral-100 text-sm"

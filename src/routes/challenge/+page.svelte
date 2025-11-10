@@ -9,23 +9,23 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let challenges: any[] = [];
-	let allChallenges: any[] = []; // Store all challenges for client-side filtering
-	let loading = true;
-	let initialLoad = true; // Track if this is the first load
-	let selectedDifficulty = 'all';
-	let selectedStatus = 'all';
-	let selectedCategories: string[] = [];
-	let selectedTags: string[] = [];
-	let searchTerm = '';
-	let sortBy = 'created_at';
-	let sortOrder = 'desc';
-	let pagination = {
+	let challenges = $state<any[]>([]);
+	let allChallenges = $state<any[]>([]); // Store all challenges for client-side filtering
+	let loading = $state(true);
+	let initialLoad = $state(true); // Track if this is the first load
+	let selectedDifficulty = $state('all');
+	let selectedStatus = $state('all');
+	let selectedCategories = $state<string[]>([]);
+	let selectedTags = $state<string[]>([]);
+	let searchTerm = $state('');
+	let sortBy = $state('created_at');
+	let sortOrder = $state('desc');
+	let pagination = $state({
 		page: 1,
 		limit: 20,
 		total: 0,
 		totalPages: 0
-	};
+	});
 
 	// Live search functionality
 	async function fetchAllChallenges() {
@@ -315,10 +315,10 @@
 												value={status.id}
 												checked={selectedStatus === status.id}
 												onchange={() => handleStatusChange(status.id)}
-												class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 focus:ring-emerald-500"
-											/>
-											<svelte:component this={status.icon} class="w-5 h-5 {status.color}" />
-											<span class="text-sm text-neutral-200">{status.name}</span>
+											class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 focus:ring-emerald-500"
+										/>
+										<status.icon class="w-5 h-5 {status.color}" />
+										<span class="text-sm text-neutral-200">{status.name}</span>
 										</label>
 									{/each}
 								</CardContent>
@@ -346,10 +346,10 @@
 												value={difficulty.id}
 												checked={selectedDifficulty === difficulty.id}
 												onchange={() => handleDifficultyChange(difficulty.id)}
-												class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 focus:ring-emerald-500"
-											/>
-											<svelte:component this={difficulty.icon} class="w-5 h-5 {difficulty.color}" />
-											<div class="flex-1 flex items-center justify-between">
+											class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 focus:ring-emerald-500"
+										/>
+										<difficulty.icon class="w-5 h-5 {difficulty.color}" />
+										<div class="flex-1 flex items-center justify-between">
 												<span class="text-sm text-neutral-200">{difficulty.name}</span>
 												<span class="text-xs text-neutral-500">({difficulty.count})</span>
 											</div>
@@ -385,10 +385,10 @@
 													? selectedCategories.filter(c => c !== category.id)
 													: [...selectedCategories, category.id]
 												)}
-												class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500"
-											/>
-											<svelte:component this={category.icon} class="w-4 h-4 text-emerald-400" />
-											<div class="flex-1 flex items-center justify-between">
+											class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500"
+										/>
+										<category.icon class="w-4 h-4 text-emerald-400" />
+										<div class="flex-1 flex items-center justify-between">
 												<span class="text-sm text-neutral-200">{category.name}</span>
 												<span class="text-xs text-neutral-500">({category.count})</span>
 											</div>
@@ -429,9 +429,9 @@
 													: [...selectedTags, tag.id]
 												)}
 												class="w-4 h-4 text-emerald-600 bg-neutral-800 border-neutral-600 rounded focus:ring-emerald-500"
-											/>
-											<svelte:component this={tag.icon} class="w-4 h-4 text-emerald-400" />
-											<div class="flex-1 flex items-center justify-between">
+										/>
+										<tag.icon class="w-4 h-4 text-emerald-400" />
+										<div class="flex-1 flex items-center justify-between">
 												<span class="text-sm text-neutral-200">{tag.name}</span>
 												<span class="text-xs text-neutral-500">({tag.count})</span>
 											</div>
@@ -509,10 +509,10 @@
 													<h3 class="font-semibold text-lg text-neutral-100 group-hover:text-emerald-400 transition-colors">
 														{challenge.title}
 													</h3>
-													<Badge class="shrink-0 {getDifficultyColor(challenge.difficulty)} flex items-center gap-1">
-														<svelte:component this={getDifficultyIcon(challenge.difficulty)} class="w-3 h-3" />
-														{challenge.difficulty}
-													</Badge>
+												<Badge class="shrink-0 {getDifficultyColor(challenge.difficulty)} flex items-center gap-1">
+													<svelte:component this={getDifficultyIcon(challenge.difficulty)} class="w-3 h-3" />
+													{challenge.difficulty}
+												</Badge>
 												</div>
 												
 												<div class="text-neutral-400 text-sm mb-4 line-clamp-2 prose prose-invert prose-sm max-w-none">
