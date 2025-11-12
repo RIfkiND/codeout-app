@@ -4,12 +4,28 @@
 	import { getTemplate, getMonacoLanguage, fetchLanguages } from './LanguageTemplates';
 	import type * as Monaco from 'monaco-editor';
 
-	// Props
-	export let value: string = '';
-	export let language: string = 'javascript';
-	export let theme: string = 'vs-code-dark';
-	export let height: string = '400px';
-	export let readonly: boolean = false;
+	interface EditorProps {
+		value?: string;
+		language?: string;
+		theme?: string;
+		height?: string;
+		readonly?: boolean;
+		onchange?: (value: string) => void;
+		onready?: (editor: Monaco.editor.IStandaloneCodeEditor) => void;
+	}
+
+	let { 
+		value = $bindable(''),
+		language = 'javascript',
+		theme = 'vs-code-dark',
+		height = '400px',
+		readonly = false,
+		onchange,
+		onready
+	}: EditorProps = $props();
+
+	// Internal state to track value updates
+	let internalValue = $state(value);
 
 	const dispatch = createEventDispatcher<{
 		change: { value: string };
@@ -43,7 +59,7 @@
 			await new Promise(resolve => setTimeout(resolve, 100));
 
 			const monacoLang = await getMonacoLanguage(language);
-			const initialValue = value || await getTemplate(language);
+			const initialValue = internalValue || value || await getTemplate(language);
 			
 			const editorOptions = getEditorOptions({ 
 				minimap: { enabled: false },
@@ -62,23 +78,36 @@
 			editor.onDidChangeModelContent(() => {
 				if (!mounted) return;
 				const currentValue = editor?.getValue() || '';
+				internalValue = currentValue;
 				value = currentValue;
 				dispatch('change', { value: currentValue });
+				onchange?.(currentValue);
 			});
 
 			// Set the theme after creation
 			monaco.editor.setTheme(theme);
 
 			dispatch('ready', { editor });
+			onready?.(editor);
 		} catch (error) {
 			console.error('Editor init failed:', error);
 		}
 	}
 
 	// Reactive language changes
-	$: if (editor && monaco && mounted) {
-		updateLanguage();
-	}
+	$effect(() => {
+		if (editor && monaco && mounted) {
+			updateLanguage();
+		}
+	});
+
+	// Reactive value changes
+	$effect(() => {
+		if (editor && value !== internalValue && mounted) {
+			internalValue = value;
+			editor.setValue(value);
+		}
+	});
 
 	async function updateLanguage() {
 		if (!editor || !monaco) return;
@@ -93,7 +122,13 @@
 	// Public API
 	export function getEditor() { return editor; }
 	export function getValue() { return editor?.getValue() || ''; }
-	export function setValue(newValue: string) { editor?.setValue(newValue); }
+	export function setValue(newValue: string) { 
+		if (editor) {
+			editor.setValue(newValue);
+		}
+		internalValue = newValue;
+		value = newValue;
+	}
 	export async function loadTemplate() { 
 		const template = await getTemplate(language);
 		setValue(template);

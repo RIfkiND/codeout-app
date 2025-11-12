@@ -3,14 +3,14 @@ import { Button } from '$lib/components/ui/button';
 import { Badge } from '$lib/components/ui/badge';
 import { LogOut, Settings, User } from 'lucide-svelte';
 
-interface User {
+interface UserData {
 	id: string;
 	name?: string;
 	email?: string;
 	role: string;
 }
 
-let { user }: { user: User } = $props();
+let { user }: { user: UserData } = $props();
 
 async function handleLogout() {
 	try {

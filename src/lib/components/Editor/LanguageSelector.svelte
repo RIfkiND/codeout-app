@@ -2,11 +2,18 @@
 	import { onMount } from 'svelte';
 	import { fetchLanguages, type ProgrammingLanguage } from './LanguageTemplates';
 
-	export let selected: string = 'javascript';
-	export let onChange: (language: string) => void = () => {};
+	interface LanguageSelectorProps {
+		selected?: string;
+		onChange?: (language: string) => void;
+	}
 
-	let languages: ProgrammingLanguage[] = [];
-	let loading = true;
+	let { 
+		selected = $bindable('javascript'),
+		onChange = () => {}
+	}: LanguageSelectorProps = $props();
+
+	let languages: ProgrammingLanguage[] = $state([]);
+	let loading = $state(true);
 
 	onMount(async () => {
 		languages = await fetchLanguages();
@@ -31,7 +38,7 @@
 		<select 
 			id="language-select"
 			bind:value={selected}
-			on:change={handleChange}
+			onchange={handleChange}
 			class="px-3 py-2 border border-gray-600 rounded-lg bg-neutral-800/50 text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
 		>
 			{#each languages as lang}

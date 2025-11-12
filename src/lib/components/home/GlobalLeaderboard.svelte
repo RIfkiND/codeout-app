@@ -94,7 +94,15 @@ const getCountryFlag = (country: string) => {
           <div class="group flex items-center gap-4 p-4 rounded-lg bg-neutral-800/50 hover:bg-neutral-800 transition-all duration-200 border border-neutral-700/50 hover:border-neutral-600">
             <!-- Rank -->
             <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700">
-              <svelte:component this={getRankIcon(user.rank)} class="w-6 h-6 {getRankColor(user.rank)}" />
+              {#if user.rank === 1}
+                <Crown class="w-6 h-6 {getRankColor(user.rank)}" />
+              {:else if user.rank === 2}
+                <Trophy class="w-6 h-6 {getRankColor(user.rank)}" />
+              {:else if user.rank === 3}
+                <Medal class="w-6 h-6 {getRankColor(user.rank)}" />
+              {:else}
+                <Star class="w-6 h-6 {getRankColor(user.rank)}" />
+              {/if}
             </div>
 
             <!-- User Info -->

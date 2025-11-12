@@ -5,6 +5,7 @@ import { Card } from '$lib/components/ui/card';
 import { Input } from '$lib/components/ui/input';
 import { Label } from '$lib/components/ui/label';
 import { Badge } from '$lib/components/ui/badge';
+import { Textarea } from '$lib/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 import WysiwygEditor from '$lib/components/Editor/WysiwygEditor.svelte';
 import { Plus, Trash2, Save, Eye, X, Hash, Tag } from 'lucide-svelte';
@@ -235,7 +236,7 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 							bind:value={tagInput}
 							placeholder="Enter custom tag..."
 							class="bg-neutral-800 border-neutral-700 text-neutral-100"
-							on:keydown={(e) => {
+							onkeydown={(e) => {
 								if (e.key === 'Enter') {
 									e.preventDefault();
 									addTag();

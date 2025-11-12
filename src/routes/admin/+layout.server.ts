@@ -5,11 +5,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	try {
 		const { session, user } = await locals.safeGetSession();
 		
-		// Debug logging
-		console.log('Admin Layout - Session exists:', !!session);
-		console.log('Admin Layout - User exists:', !!user);
-		console.log('Admin Layout - User ID:', user?.id);
-		console.log('Admin Layout - User email:', user?.email);
+	
 		
 		if (!session || !user) {
 			console.log('Admin Layout - No session/user, redirecting to login');
@@ -24,18 +20,18 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			.single();
 
 		console.log('Admin Layout - User lookup error:', userError);
-		console.log('Admin Layout - User data:', userData);
+		// console.log('Admin Layout - User data:', userData);
 
 		// Type assertion for Supabase response
 		const typedUserData = userData as { role: string; name: string; email: string } | null;
 
 		if (!typedUserData) {
-			console.log('Admin Layout - No user data found in database');
+	
 			throw redirect(303, '/home?error=user_not_found');
 		}
 
 		if (typedUserData.role !== 'admin') {
-			console.log('Admin Layout - User role is not admin:', typedUserData.role);
+		
 			throw redirect(303, '/home?error=unauthorized');
 		}
 
