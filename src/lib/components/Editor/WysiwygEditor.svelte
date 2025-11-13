@@ -1,15 +1,21 @@
 <script lang="ts">
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { Editor } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 
-	export let content: string = '';
-	export let editable: boolean = true;
-	export let placeholder: string = 'Write your description...';
+	interface WysiwygEditorProps {
+		content?: string;
+		editable?: boolean;
+		placeholder?: string;
+		onupdate?: (content: string) => void;
+	}
 
-	const dispatch = createEventDispatcher<{
-		update: string;
-	}>();
+	let {
+		content = $bindable(''),
+		editable = true,
+		placeholder = 'Write your description...',
+		onupdate
+	}: WysiwygEditorProps = $props();
 
 	let element: HTMLElement;
 	let editor: Editor;
@@ -71,7 +77,7 @@
 			onUpdate: ({ editor }) => {
 				const html = editor.getHTML();
 				content = html;
-				dispatch('update', html);
+				onupdate?.(html);
 			}
 		});
 	});
@@ -83,14 +89,18 @@
 	});
 
 	// Update content when prop changes
-	$: if (editor && content !== editor.getHTML()) {
-		editor.commands.setContent(content);
-	}
+	$effect(() => {
+		if (editor && content !== editor.getHTML()) {
+			editor.commands.setContent(content);
+		}
+	});
 
 	// Update editable state when prop changes
-	$: if (editor) {
-		editor.setEditable(editable);
-	}
+	$effect(() => {
+		if (editor) {
+			editor.setEditable(editable);
+		}
+	});
 
 	function toggleBold() {
 		editor.chain().focus().toggleBold().run();
@@ -126,7 +136,7 @@
 	<div class="border-b border-neutral-600 bg-neutral-800 p-3 flex flex-wrap gap-2 rounded-t-md">
 		<button
 			type="button"
-			on:click={() => addHeading(1)}
+			onclick={() => addHeading(1)}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-medium"
 			class:bg-emerald-600={editor?.isActive('heading', { level: 1 })}
 			class:hover:bg-emerald-700={editor?.isActive('heading', { level: 1 })}
@@ -135,7 +145,7 @@
 		</button>
 		<button
 			type="button"
-			on:click={() => addHeading(2)}
+			onclick={() => addHeading(2)}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-medium"
 			class:bg-emerald-600={editor?.isActive('heading', { level: 2 })}
 			class:hover:bg-emerald-700={editor?.isActive('heading', { level: 2 })}
@@ -144,7 +154,7 @@
 		</button>
 		<button
 			type="button"
-			on:click={() => addHeading(3)}
+			onclick={() => addHeading(3)}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-medium"
 			class:bg-emerald-600={editor?.isActive('heading', { level: 3 })}
 			class:hover:bg-emerald-700={editor?.isActive('heading', { level: 3 })}
@@ -156,7 +166,7 @@
 		
 		<button
 			type="button"
-			on:click={toggleBold}
+			onclick={toggleBold}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-bold"
 			class:bg-emerald-600={editor?.isActive('bold')}
 			class:hover:bg-emerald-700={editor?.isActive('bold')}
@@ -165,7 +175,7 @@
 		</button>
 		<button
 			type="button"
-			on:click={toggleItalic}
+			onclick={toggleItalic}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors italic"
 			class:bg-emerald-600={editor?.isActive('italic')}
 			class:hover:bg-emerald-700={editor?.isActive('italic')}
@@ -174,7 +184,7 @@
 		</button>
 		<button
 			type="button"
-			on:click={toggleCode}
+			onclick={toggleCode}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors font-mono"
 			class:bg-emerald-600={editor?.isActive('code')}
 			class:hover:bg-emerald-700={editor?.isActive('code')}
@@ -186,7 +196,7 @@
 		
 		<button
 			type="button"
-			on:click={toggleBulletList}
+			onclick={toggleBulletList}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors"
 			class:bg-emerald-600={editor?.isActive('bulletList')}
 			class:hover:bg-emerald-700={editor?.isActive('bulletList')}
@@ -195,7 +205,7 @@
 		</button>
 		<button
 			type="button"
-			on:click={toggleOrderedList}
+			onclick={toggleOrderedList}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors"
 			class:bg-emerald-600={editor?.isActive('orderedList')}
 			class:hover:bg-emerald-700={editor?.isActive('orderedList')}
@@ -207,7 +217,7 @@
 		
 		<button
 			type="button"
-			on:click={toggleCodeBlock}
+			onclick={toggleCodeBlock}
 			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded transition-colors"
 			class:bg-emerald-600={editor?.isActive('codeBlock')}
 			class:hover:bg-emerald-700={editor?.isActive('codeBlock')}

@@ -2,18 +2,18 @@
 	import { Play, Send, Upload } from 'lucide-svelte';
 	import Editor from '$lib/components/Editor/Editor.svelte';
 	import LanguageSelector from '$lib/components/Editor/LanguageSelector.svelte';
-	import { createEventDispatcher } from 'svelte';
-	
-	const dispatch = createEventDispatcher<{
-		submit: { code: string; language: string };
-		run: { code: string; language: string };
-	}>();
+	interface CodePanelProps {
+		onsubmit?: (event: CustomEvent<{ code: string; language: string }>) => void;
+		onrun?: (event: CustomEvent<{ code: string; language: string }>) => void;
+	}
+
+	let { onsubmit, onrun }: CodePanelProps = $props();
 
 	let editor: Editor;
-	let code = '';
-	let language = 'javascript';
-	let isSubmitting = false;
-	let isRunning = false;
+	let code = $state('');
+	let language = $state('javascript');
+	let isSubmitting = $state(false);
+	let isRunning = $state(false);
 
 	async function handleLanguageChange(newLanguage: string) {
 		language = newLanguage;
@@ -22,13 +22,12 @@
 		}
 	}
 
-	function handleCodeChange(event: CustomEvent<{ value: string }>) {
-		code = event.detail.value;
-	}
+
 
 	async function runCode() {
 		isRunning = true;
-		dispatch('run', { code, language });
+		const event = new CustomEvent('run', { detail: { code, language } });
+		onrun?.(event);
 		setTimeout(() => {
 			isRunning = false;
 		}, 2000);
@@ -36,7 +35,8 @@
 
 	async function submitCode() {
 		isSubmitting = true;
-		dispatch('submit', { code, language });
+		const event = new CustomEvent('submit', { detail: { code, language } });
+		onsubmit?.(event);
 		setTimeout(() => {
 			isSubmitting = false;
 		}, 2000);
@@ -58,7 +58,7 @@
 		<!-- Actions -->
 		<div class="flex items-center gap-3">
 			<button 
-				on:click={runCode}
+				onclick={runCode}
 				disabled={isRunning}
 				class="px-4 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 			>
@@ -71,7 +71,7 @@
 			</button>
 			
 			<button 
-				on:click={submitCode}
+				onclick={submitCode}
 				disabled={isSubmitting}
 				class="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 			>
@@ -93,7 +93,7 @@
 			{language}
 			theme="vs-code-dark"
 			height="100%"
-			on:change={handleCodeChange}
+			onchange={(value) => { code = value; }}
 		/>
 	</div>
 

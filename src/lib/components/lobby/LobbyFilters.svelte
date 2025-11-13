@@ -78,8 +78,7 @@ const handleSortChange = (e: Event) => {
             : "border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:border-neutral-600"
           }
         >
-          {@const OptionIcon = option.icon}
-          <OptionIcon class="w-3 h-3 mr-1" />
+          <svelte:component this={option.icon} class="w-3 h-3 mr-1" />
           {option.label}
         </Button>
       {/each}

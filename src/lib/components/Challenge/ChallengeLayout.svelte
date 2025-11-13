@@ -6,26 +6,42 @@
 	import ChallengeSelector from './ChallengeSelector.svelte';
 	import { onMount } from 'svelte';
 	
-	export let challengeId: string | null = null;
-	export let challenge: any = null;
-	export let editable: boolean = false;
-	export let lobbyId: string | null = null;
-	export let lobby: any = null;
-	export let timeRemaining: number = 0;
+	interface ChallengeLayoutProps {
+		challengeId?: string | null;
+		challenge?: any;
+		editable?: boolean;
+		lobbyId?: string | null;
+		lobby?: any;
+		timeRemaining?: number;
+	}
 
-	let challenges: any[] = [];
-	let selectedChallengeId = challengeId;
-	let loadingChallenges = false;
+	let { 
+		challengeId = null,
+		challenge = null,
+		editable = false,
+		lobbyId = null,
+		lobby = null,
+		timeRemaining = 0
+	}: ChallengeLayoutProps = $props();
+
+	let challenges: any[] = $state([]);
+	let selectedChallengeId = $state(challengeId);
+	let loadingChallenges = $state(false);
 	
 	let codePanel: CodePanel;
-	let testResults: any = null;
-	let isRunning = false;
-	let isSubmitting = false;
-	let sidebarWidth = 50; // Percentage
-	let isDragging = false;
+	let testResults: any = $state(null);
+	let isRunning = $state(false);
+	let isSubmitting = $state(false);
+	let sidebarWidth = $state(50); // Percentage
+	let isDragging = $state(false);
 
 	onMount(() => {
 		loadChallenges();
+	});
+
+	// Update selectedChallengeId when challengeId prop changes
+	$effect(() => {
+		selectedChallengeId = challengeId;
 	});
 
 	async function loadChallenges() {
@@ -227,7 +243,7 @@
 			<ChallengeSelector 
 				{challenges} 
 				selectedId={selectedChallengeId}
-				on:select={selectChallenge}
+				onselect={selectChallenge}
 			/>
 		</div>
 		
@@ -257,7 +273,7 @@
 		<!-- Resize Handle -->
 		<button
 			class="w-1 bg-gray-700 hover:bg-gray-600 cursor-col-resize flex items-center justify-center group transition-colors"
-			on:mousedown={handleMouseDown}
+			onmousedown={handleMouseDown}
 			aria-label="Resize panels"
 		>
 			<GripVertical size={16} class="text-gray-500 group-hover:text-gray-400" />
@@ -269,8 +285,8 @@
 			<div class="flex-1 min-h-0">
 				<CodePanel 
 					bind:this={codePanel}
-					on:run={handleRun}
-					on:submit={handleSubmit}
+					onrun={handleRun}
+					onsubmit={handleSubmit}
 				/>
 			</div>
 			

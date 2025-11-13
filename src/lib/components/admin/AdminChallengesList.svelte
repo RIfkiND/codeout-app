@@ -171,17 +171,16 @@ function formatSuccessRate(rate?: number): string {
 						
 						<div class="flex items-center space-x-1">
 							{#each Array.from({ length: Math.min(5, pagination.totalPages) }) as _, i}
-								{@const pageNum = i + 1}
 								<Button
-									variant={pageNum === pagination.page ? "default" : "ghost"}
+									variant={i + 1 === pagination.page ? "default" : "ghost"}
 									size="sm"
-									href="/admin/challenges?page={pageNum}"
-									class={pageNum === pagination.page 
+									href="/admin/challenges?page={i + 1}"
+									class={i + 1 === pagination.page 
 										? "bg-emerald-600 text-white" 
 										: "text-neutral-400 hover:text-neutral-100"
 									}
 								>
-									{pageNum}
+									{i + 1}
 								</Button>
 							{/each}
 						</div>

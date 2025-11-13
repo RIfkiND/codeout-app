@@ -12,7 +12,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.eq('id', session.user.id)
 			.single();
 			
-		if (userData?.role === 'admin') {
+		// Type assertion for Supabase response
+		const typedUserData = userData as { role: string } | null;
+			
+		if (typedUserData?.role === 'admin') {
 			throw redirect(303, '/admin');
 		} else {
 			// Not an admin, redirect to regular dashboard with error
@@ -26,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	login: async ({ request, locals, url }) => {
+	login: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString();
 		const password = formData.get('password')?.toString();
@@ -66,6 +69,9 @@ export const actions: Actions = {
 				.eq('id', authData.user.id)
 				.single();
 
+			// Type assertion for Supabase response
+			const typedUserData = userData as { role: string } | null;
+
 			if (userError) {
 				console.error('User role check error:', userError);
 				await locals.supabase.auth.signOut();
@@ -75,7 +81,7 @@ export const actions: Actions = {
 				});
 			}
 
-			if (!userData || userData.role !== 'admin') {
+			if (!typedUserData || typedUserData.role !== 'admin') {
 				// Sign out non-admin user
 				await locals.supabase.auth.signOut();
 				return fail(403, { 

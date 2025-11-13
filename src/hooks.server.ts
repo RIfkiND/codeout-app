@@ -69,8 +69,8 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		redirect(303, '/auth/login');
 	}
 
-	// Redirect authenticated users away from auth pages
-	if (event.url.pathname.startsWith('/auth') && session) {
+	// Redirect authenticated users away from auth pages (except callback)
+	if (event.url.pathname.startsWith('/auth') && session && !event.url.pathname.includes('/auth/callback')) {
 		redirect(303, '/dashboard');
 	}
 

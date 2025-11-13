@@ -14,11 +14,11 @@ interface Stats {
 
 let { stats }: { stats: Stats } = $props();
 
-$: easyPercentage = stats.totalChallenges > 0 ? (stats.difficultyStats.easy / stats.totalChallenges) * 100 : 0;
-$: mediumPercentage = stats.totalChallenges > 0 ? (stats.difficultyStats.medium / stats.totalChallenges) * 100 : 0;
-$: hardPercentage = stats.totalChallenges > 0 ? (stats.difficultyStats.hard / stats.totalChallenges) * 100 : 0;
+let easyPercentage = $derived(stats.totalChallenges > 0 ? (stats.difficultyStats.easy / stats.totalChallenges) * 100 : 0);
+let mediumPercentage = $derived(stats.totalChallenges > 0 ? (stats.difficultyStats.medium / stats.totalChallenges) * 100 : 0);
+let hardPercentage = $derived(stats.totalChallenges > 0 ? (stats.difficultyStats.hard / stats.totalChallenges) * 100 : 0);
 
-const difficulties = [
+const difficulties = $derived([
 	{
 		name: 'Easy',
 		count: stats.difficultyStats.easy,
@@ -40,7 +40,7 @@ const difficulties = [
 		color: 'text-red-400',
 		bgColor: 'bg-red-500'
 	}
-];
+]);
 </script>
 
 <div class="mb-8">
