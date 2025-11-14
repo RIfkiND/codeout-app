@@ -294,7 +294,6 @@
 											onchange={() => toggleCategory(category.id)}
 											class="h-4 w-4 rounded border-neutral-600 bg-neutral-800 text-emerald-600 focus:ring-2 focus:ring-emerald-500"
 										/>
-										<span class="text-base">{category.icon}</span>
 										<div class="min-w-0 flex-1">
 											<div class="truncate text-sm font-medium text-neutral-200">
 												{category.name}
@@ -411,7 +410,6 @@
 						{@const category = categories.find((c) => c.id === categoryId)}
 						{#if category}
 							<Badge class="border border-emerald-500/30 bg-emerald-500/20 text-emerald-400">
-								{category.icon}
 								{category.name}
 								<button
 									onclick={() => toggleCategory(categoryId)}
