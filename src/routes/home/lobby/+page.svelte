@@ -1,3 +1,4 @@
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import LobbyCard from '$lib/components/lobby/LobbyCard.svelte';
@@ -25,8 +26,7 @@
 	let lobbyStats = $state(data.stats || {
 		totalLobbies: 0,
 		activeLobbies: 0,
-		totalParticipants: 0,
-		totalPrizePool: 0
+		totalParticipants: 0
 	});
 
 	const loadLobbies = async () => {
@@ -35,7 +35,11 @@
 			const response = await fetch('/api/lobbies');
 			if (response.ok) {
 				const data = await response.json();
-				lobbies = data.lobbies || [];
+				lobbies = (data.lobbies || []).map((lobby: any) => ({
+					...lobby,
+					// Ensure lobby_users exists even if empty
+					lobby_users: lobby.lobby_users || []
+				}));
 				updateStats();
 				filterAndSortLobbies();
 			}
@@ -50,8 +54,7 @@
 		lobbyStats = {
 			totalLobbies: lobbies.length,
 			activeLobbies: lobbies.filter(l => l.status === 'active' || l.status === 'waiting').length,
-			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0),
-			totalPrizePool: lobbies.reduce((sum, l) => sum + (l.prize_pool || 0), 0)
+			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0)
 		};
 	};
 
@@ -73,7 +76,6 @@
 			switch (sortBy) {
 				case 'name': return a.name.localeCompare(b.name);
 				case 'participants': return (b.lobby_users?.length || 0) - (a.lobby_users?.length || 0);
-				case 'prize_pool': return (b.prize_pool || 0) - (a.prize_pool || 0);
 				default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 			}
 		});
@@ -151,7 +153,11 @@
 			{#snippet children()}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{#each filteredLobbies as lobby (lobby.id)}
-						<LobbyCard {lobby} onJoin={handleJoinLobby} />
+						<LobbyCard 
+							{lobby} 
+							onJoin={handleJoinLobby} 
+							currentUserId={data.user?.id}
+						/>
 					{/each}
 				</div>
 			{/snippet}

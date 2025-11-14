@@ -50,14 +50,17 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 			.from('lobby_users')
 			.insert({
 				lobby_id: params.id,
-				user_id: user.id
-			})
+				user_id: user.id,
+				is_creator: false,
+				is_ready: false
+			} as any)
 			.select(`
 				*,
 				users (
 					id,
 					name,
 					user_profiles (
+						username,
 						avatar_url
 					)
 				)

@@ -33,8 +33,7 @@ const statusOptions = [
 const sortOptions = [
   { value: 'created_at', label: 'Newest First' },
   { value: 'name', label: 'Name A-Z' },
-  { value: 'participants', label: 'Most Players' },
-  { value: 'prize_pool', label: 'Highest Prize' }
+  { value: 'participants', label: 'Most Players' }
 ];
 
 const handleSearch = (e: Event) => {

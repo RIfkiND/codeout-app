@@ -7,26 +7,19 @@ interface Props {
     totalLobbies: number;
     activeLobbies: number;
     totalParticipants: number;
-    totalPrizePool: number;
   };
 }
 
 let { stats = {
   totalLobbies: 0,
   activeLobbies: 0,
-  totalParticipants: 0,
-  totalPrizePool: 0
+  totalParticipants: 0
 }}: Props = $props();
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount);
-};
+
 </script>
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
   <Card class="bg-neutral-900 border-neutral-800">
     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle class="text-sm font-medium text-neutral-200">Total Lobbies</CardTitle>
@@ -60,14 +53,5 @@ const formatCurrency = (amount: number) => {
     </CardContent>
   </Card>
   
-  <Card class="bg-neutral-900 border-neutral-800">
-    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle class="text-sm font-medium text-neutral-200">Prize Pool</CardTitle>
-      <Trophy class="h-4 w-4 text-orange-400" />
-    </CardHeader>
-    <CardContent>
-      <div class="text-2xl font-bold text-neutral-100">{formatCurrency(stats.totalPrizePool)}</div>
-      <p class="text-xs text-neutral-400">Total rewards</p>
-    </CardContent>
-  </Card>
+
 </div>

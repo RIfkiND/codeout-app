@@ -1,14 +1,19 @@
 <script lang="ts">
-import { Users, Clock, Trophy, Play, Lock, Zap, Star, Timer } from 'lucide-svelte';
+import { Users, Clock, Trophy, Play, Lock, Zap, Star, Timer, Share2 } from 'lucide-svelte';
 import type { LobbyWithUsers } from '$lib/models/lobby';
 import { Badge } from '$lib/components/ui/badge';
+import ShareLobbyModal from './ShareLobbyModal.svelte';
 
 interface Props {
   lobby: LobbyWithUsers;
   onJoin?: (lobbyId: string) => void;
+  currentUserId?: string;
 }
 
-let { lobby, onJoin }: Props = $props();
+let { lobby, onJoin, currentUserId }: Props = $props();
+
+let shareModalOpen = $state(false);
+let isOwner = $derived(currentUserId === lobby.created_by);
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -109,17 +114,7 @@ const handleJoinClick = () => {
       </div>
     </div>
 
-    {#if lobby.prize_pool && lobby.prize_pool > 0}
-      <div class="flex items-center gap-2 text-sm col-span-2">
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
-          <Trophy class="w-4 h-4 text-amber-400" />
-        </div>
-        <div>
-          <div class="text-neutral-100 font-medium">${lobby.prize_pool}</div>
-          <div class="text-xs text-neutral-500">Prize Pool</div>
-        </div>
-      </div>
-    {/if}
+
   </div>
 
   <!-- Participants Preview -->
@@ -152,7 +147,7 @@ const handleJoinClick = () => {
     {#if canJoin()}
       <button
         onclick={handleJoinClick}
-        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25 cursor-pointer"
       >
         <Play class="w-4 h-4" />
         Join Lobby
@@ -160,7 +155,7 @@ const handleJoinClick = () => {
     {:else}
       <a 
         href="/home/lobby/{lobby.id}" 
-        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg text-sm font-medium transition-all duration-200"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer"
       >
         <Play class="w-4 h-4" />
         {#if lobby.status === 'waiting' && isFull()}
@@ -175,9 +170,23 @@ const handleJoinClick = () => {
       </a>
     {/if}
     
+    {#if isOwner}
+      <button
+        onclick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          shareModalOpen = true;
+        }}
+        class="inline-flex items-center justify-center px-3 py-3 bg-blue-800 hover:bg-blue-700 border border-blue-700 hover:border-blue-600 text-blue-200 rounded-lg transition-all duration-200 cursor-pointer"
+        title="Share Lobby"
+      >
+        <Share2 class="w-4 h-4" />
+      </button>
+    {/if}
+    
     <a 
       href="/home/lobby/{lobby.id}" 
-      class="inline-flex items-center justify-center px-3 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg transition-all duration-200"
+      class="inline-flex items-center justify-center px-3 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg transition-all duration-200 cursor-pointer"
       title="View Details"
     >
       <Star class="w-4 h-4" />
@@ -193,3 +202,11 @@ const handleJoinClick = () => {
     </div>
   {/if}
 </div>
+
+{#if isOwner}
+  <ShareLobbyModal 
+    lobby={lobby}
+    bind:isOpen={shareModalOpen}
+    onClose={() => shareModalOpen = false}
+  />
+{/if}

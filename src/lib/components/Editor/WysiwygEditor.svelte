@@ -18,7 +18,7 @@
 	}: WysiwygEditorProps = $props();
 
 	let element: HTMLElement;
-	let editor: Editor;
+	let editor: Editor = $state() as Editor;
 
 	onMount(() => {
 		editor = new Editor({

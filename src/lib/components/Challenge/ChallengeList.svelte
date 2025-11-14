@@ -77,21 +77,15 @@
 
 						<!-- Challenge Info -->
 						<div class="flex-1 min-w-0">
-							<div class="flex items-start justify-between gap-4 mb-2">
-								<h3 class="font-semibold text-lg text-neutral-100 group-hover:text-emerald-400 transition-colors">
-									{challenge.title}
-								</h3>
-								<Badge class="shrink-0 {getDifficultyColor(challenge.difficulty)} flex items-center gap-1">
-									<svelte:component this={getDifficultyIcon(challenge.difficulty)} class="w-3 h-3" />
-									{challenge.difficulty}
-								</Badge>
-							</div>
-							
-							<div class="text-neutral-400 text-sm mb-4 line-clamp-2 prose prose-invert prose-sm max-w-none">
-								{@html challenge.description}
-							</div>
-
-							<!-- Stats and Actions -->
+							<div class="flex items-start justify-between gap-4 mb-4">
+							<h3 class="font-semibold text-lg text-neutral-100 group-hover:text-emerald-400 transition-colors">
+								{challenge.title}
+							</h3>
+							<Badge class="shrink-0 {getDifficultyColor(challenge.difficulty)} flex items-center gap-1">
+								<svelte:component this={getDifficultyIcon(challenge.difficulty)} class="w-3 h-3" />
+								{challenge.difficulty}
+							</Badge>
+						</div>							<!-- Stats and Actions -->
 							<div class="flex items-center justify-between">
 								<div class="flex items-center gap-6 text-sm text-neutral-400">
 									<div class="flex items-center gap-1">

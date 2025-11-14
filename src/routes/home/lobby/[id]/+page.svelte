@@ -1,3 +1,4 @@
+
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
@@ -265,18 +266,7 @@
 				</CardContent>
 			</Card>
 			
-			{#if lobby.prize_pool && lobby.prize_pool > 0}
-				<Card class="bg-neutral-900 border-neutral-800">
-					<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle class="text-sm font-medium text-neutral-200">Prize Pool</CardTitle>
-						<Trophy class="h-4 w-4 text-orange-400" />
-					</CardHeader>
-					<CardContent>
-						<div class="text-2xl font-bold text-neutral-100">${lobby.prize_pool}</div>
-						<p class="text-xs text-neutral-400">Total rewards</p>
-					</CardContent>
-				</Card>
-			{/if}
+
 			
 			<Card class="bg-neutral-900 border-neutral-800">
 				<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
