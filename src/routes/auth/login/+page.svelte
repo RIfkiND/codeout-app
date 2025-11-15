@@ -50,24 +50,23 @@
 				<CodePreview />
 
 				<!-- Welcome content -->
-				<div class="w-md text-center">
-					<h2 class="mb-4 text-3xl font-bold text-white">Welcome to CodeOut</h2>
+				<div class="flex w-lg flex-col items-center justify-center text-center">
 					<p class="mb-8 text-lg leading-relaxed text-neutral-300">
 						Join thousands of developers solving challenges, competing in live lobbies, and
 						improving their coding skills.
 					</p>
 
 					<!-- Features -->
-					<div class="grid grid-cols-1 gap-4 text-left">
-						<div class="flex items-center gap-3 text-neutral-300">
+					<div class="flex flex-col gap-4 text-left text-xl font-bold">
+						<div class="flex items-center gap-3 text-white">
 							<div class="h-2 w-2 rounded-full bg-emerald-400"></div>
 							<span>Solve coding challenges</span>
 						</div>
-						<div class="flex items-center gap-3 text-neutral-300">
+						<div class="flex items-center gap-3 text-white">
 							<div class="h-2 w-2 rounded-full bg-emerald-400"></div>
 							<span>Compete in real-time</span>
 						</div>
-						<div class="flex items-center gap-3 text-neutral-300">
+						<div class="flex items-center gap-3 text-white">
 							<div class="h-2 w-2 rounded-full bg-emerald-400"></div>
 							<span>Learn and grow together</span>
 						</div>
