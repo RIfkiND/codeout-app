@@ -22,12 +22,13 @@
 	let searchQuery = $state('');
 	let selectedStatus = $state('all');
 	let sortBy = $state('created_at');
-	let lobbyStats = $state(data.stats || {
-		totalLobbies: 0,
-		activeLobbies: 0,
-		totalParticipants: 0,
-		totalPrizePool: 0
-	});
+	let lobbyStats = $state(
+		data.stats || {
+			totalLobbies: 0,
+			activeLobbies: 0,
+			totalParticipants: 0
+		}
+	);
 
 	const loadLobbies = async () => {
 		isLoading = true;
@@ -49,7 +50,7 @@
 	const updateStats = () => {
 		lobbyStats = {
 			totalLobbies: lobbies.length,
-			activeLobbies: lobbies.filter(l => l.status === 'active' || l.status === 'waiting').length,
+			activeLobbies: lobbies.filter((l) => l.status === 'active' || l.status === 'waiting').length,
 			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0),
 			totalPrizePool: lobbies.reduce((sum, l) => sum + (l.prize_pool || 0), 0)
 		};
@@ -59,22 +60,27 @@
 		let filtered = [...lobbies];
 
 		if (searchQuery.trim()) {
-			filtered = filtered.filter(lobby =>
-				lobby.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				lobby.description?.toLowerCase().includes(searchQuery.toLowerCase())
+			filtered = filtered.filter(
+				(lobby) =>
+					lobby.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					lobby.description?.toLowerCase().includes(searchQuery.toLowerCase())
 			);
 		}
 
 		if (selectedStatus !== 'all') {
-			filtered = filtered.filter(lobby => lobby.status === selectedStatus);
+			filtered = filtered.filter((lobby) => lobby.status === selectedStatus);
 		}
 
 		filtered.sort((a, b) => {
 			switch (sortBy) {
-				case 'name': return a.name.localeCompare(b.name);
-				case 'participants': return (b.lobby_users?.length || 0) - (a.lobby_users?.length || 0);
-				case 'prize_pool': return (b.prize_pool || 0) - (a.prize_pool || 0);
-				default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+				case 'name':
+					return a.name.localeCompare(b.name);
+				case 'participants':
+					return (b.lobby_users?.length || 0) - (a.lobby_users?.length || 0);
+				case 'prize_pool':
+					return (b.prize_pool || 0) - (a.prize_pool || 0);
+				default:
+					return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 			}
 		});
 
@@ -86,7 +92,7 @@
 			const response = await fetch('/api/lobbies', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(lobbyData),
+				body: JSON.stringify(lobbyData)
 			});
 
 			if (response.ok) {
@@ -122,11 +128,11 @@
 	});
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
-	<div class="max-w-7xl mx-auto">
-		<LobbyHeader 
+<div class="min-h-screen bg-neutral-950 p-4 text-neutral-100">
+	<div class="mx-auto max-w-7xl">
+		<LobbyHeader
 			onRefresh={loadLobbies}
-			onCreate={() => showCreateModal = true}
+			onCreate={() => (showCreateModal = true)}
 			{isLoading}
 			lobbies={lobbies as unknown as Record<string, unknown>[]}
 		/>
@@ -137,19 +143,19 @@
 			{searchQuery}
 			{selectedStatus}
 			{sortBy}
-			onSearchChange={(query) => searchQuery = query}
-			onStatusChange={(status) => selectedStatus = status}
-			onSortChange={(sort) => sortBy = sort}
+			onSearchChange={(query) => (searchQuery = query)}
+			onStatusChange={(status) => (selectedStatus = status)}
+			onSortChange={(sort) => (sortBy = sort)}
 		/>
 
-		<LobbyGridWrapper 
+		<LobbyGridWrapper
 			{filteredLobbies}
 			{isLoading}
 			lobbiesLength={lobbies.length}
-			onCreateLobby={() => showCreateModal = true}
+			onCreateLobby={() => (showCreateModal = true)}
 		>
 			{#snippet children()}
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{#each filteredLobbies as lobby (lobby.id)}
 						<LobbyCard {lobby} onJoin={handleJoinLobby} />
 					{/each}
@@ -161,6 +167,6 @@
 
 <CreateLobbyModal
 	isOpen={showCreateModal}
-	onClose={() => showCreateModal = false}
+	onClose={() => (showCreateModal = false)}
 	onSubmit={handleCreateLobby}
 />
