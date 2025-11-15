@@ -1,6 +1,12 @@
 <script lang="ts">
-import { Users, Trophy, TrendingUp, Clock } from 'lucide-svelte';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Users, Trophy, TrendingUp, Clock } from 'lucide-svelte';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
 
 interface Props {
   stats?: {

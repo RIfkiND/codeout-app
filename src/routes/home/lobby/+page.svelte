@@ -63,14 +63,15 @@
 		let filtered = [...lobbies];
 
 		if (searchQuery.trim()) {
-			filtered = filtered.filter(lobby =>
-				lobby.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				lobby.description?.toLowerCase().includes(searchQuery.toLowerCase())
+			filtered = filtered.filter(
+				(lobby) =>
+					lobby.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					lobby.description?.toLowerCase().includes(searchQuery.toLowerCase())
 			);
 		}
 
 		if (selectedStatus !== 'all') {
-			filtered = filtered.filter(lobby => lobby.status === selectedStatus);
+			filtered = filtered.filter((lobby) => lobby.status === selectedStatus);
 		}
 
 		filtered.sort((a, b) => {
@@ -89,7 +90,7 @@
 			const response = await fetch('/api/lobbies', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(lobbyData),
+				body: JSON.stringify(lobbyData)
 			});
 
 			if (response.ok) {
@@ -132,11 +133,11 @@
 	});
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
-	<div class="max-w-7xl mx-auto">
-		<LobbyHeader 
+<div class="min-h-screen bg-neutral-950 p-4 text-neutral-100">
+	<div class="mx-auto max-w-7xl">
+		<LobbyHeader
 			onRefresh={loadLobbies}
-			onCreate={() => showCreateModal = true}
+			onCreate={() => (showCreateModal = true)}
 			{isLoading}
 			lobbies={lobbies as unknown as Record<string, unknown>[]}
 		/>
@@ -147,19 +148,19 @@
 			{searchQuery}
 			{selectedStatus}
 			{sortBy}
-			onSearchChange={(query) => searchQuery = query}
-			onStatusChange={(status) => selectedStatus = status}
-			onSortChange={(sort) => sortBy = sort}
+			onSearchChange={(query) => (searchQuery = query)}
+			onStatusChange={(status) => (selectedStatus = status)}
+			onSortChange={(sort) => (sortBy = sort)}
 		/>
 
-		<LobbyGridWrapper 
+		<LobbyGridWrapper
 			{filteredLobbies}
 			{isLoading}
 			lobbiesLength={lobbies.length}
-			onCreateLobby={() => showCreateModal = true}
+			onCreateLobby={() => (showCreateModal = true)}
 		>
 			{#snippet children()}
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{#each filteredLobbies as lobby (lobby.id)}
 						<LobbyCard 
 							{lobby} 
@@ -175,6 +176,6 @@
 
 <CreateLobbyModal
 	isOpen={showCreateModal}
-	onClose={() => showCreateModal = false}
+	onClose={() => (showCreateModal = false)}
 	onSubmit={handleCreateLobby}
 />

@@ -114,7 +114,9 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-color: var(--color-neutral-300) rgba(0, 0, 0, 0);
   }
+
   body {
     @apply bg-background text-foreground;
   }
