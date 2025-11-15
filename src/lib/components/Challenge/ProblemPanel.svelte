@@ -116,7 +116,10 @@
 							<Badge variant="secondary" class={getDifficultyColor(currentChallenge.difficulty)}>
 								{currentChallenge.difficulty.charAt(0).toUpperCase() + currentChallenge.difficulty.slice(1)}
 							</Badge>
-
+							<div class="text-sm text-neutral-400 flex items-center gap-1">
+								<span>💎</span>
+								<span>{currentChallenge.max_score} pts</span>
+							</div>
 						</div>
 					</div>
 				</div>

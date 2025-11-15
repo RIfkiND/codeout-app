@@ -29,15 +29,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// Update the target user's role
-		const updateData = {
-			role: role as string,
-			updated_at: new Date().toISOString()
-		};
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const { data, error } = await (locals.supabase as any)
+		const { data, error } = await locals.supabase
 			.from('users')
-			.update(updateData)
+			.update({ 
+				role,
+				updated_at: new Date().toISOString()
+			})
 			.eq('id', userId)
 			.select('id, name, email, role, updated_at')
 			.single();
@@ -68,15 +65,12 @@ export const PATCH: RequestHandler = async ({ locals }) => {
 		}
 
 		// Update Kaka ND to admin (one-time operation)
-		const updateData = {
-			role: 'admin' as const,
-			updated_at: new Date().toISOString()
-		};
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const { data, error } = await (locals.supabase as any)
+		const { data, error } = await locals.supabase
 			.from('users')
-			.update(updateData)
+			.update({ 
+				role: 'admin',
+				updated_at: new Date().toISOString()
+			})
 			.eq('email', 'ndkaka04@gmail.com')
 			.select('id, name, email, role, updated_at')
 			.single();

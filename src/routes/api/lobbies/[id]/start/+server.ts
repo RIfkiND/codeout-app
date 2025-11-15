@@ -3,9 +3,8 @@ import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
 	try {
-		// Use more reliable authentication method
-		const { data: { user }, error: authError } = await locals.supabase.auth.getUser();
-		if (authError || !user) {
+		const { session } = await locals.safeGetSession();
+		if (!session) {
 			return json({ error: 'Authentication required' }, { status: 401 });
 		}
 
@@ -30,7 +29,7 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 		};
 
 		// Check if user is the creator
-		if (lobbyData.created_by !== user.id) {
+		if (lobbyData.created_by !== session.user.id) {
 			return json({ error: 'Only the lobby creator can start the lobby' }, { status: 403 });
 		}
 
@@ -50,11 +49,20 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 		}
 
 		// Update lobby status to running and set start time
-		const { data: updatedLobby, error: updateError } = await locals.supabase
-			.from('lobbies')
+		const { data: updatedLobby, error: updateError } = await (locals.supabase
+			.from('lobbies') as unknown as {
+				update: (data: Record<string, unknown>) => {
+					eq: (column: string, value: string) => {
+						select: () => {
+							single: () => Promise<{ data?: unknown; error?: unknown }>;
+						};
+					};
+				};
+			})
 			.update({
-				status: 'running' as const,
-				start_time: new Date().toISOString()
+				status: 'running',
+				start_time: new Date().toISOString(),
+				current_participants: participantCount
 			})
 			.eq('id', lobbyId)
 			.select()
@@ -62,12 +70,7 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 
 		if (updateError) {
 			console.error('Failed to start lobby:', updateError);
-			// Return structured error response
-			return json({ 
-				error: 'Failed to start lobby',
-				details: updateError.message || 'Unknown database error',
-				code: updateError.code
-			}, { status: 500 });
+			return json({ error: 'Failed to start lobby' }, { status: 500 });
 		}
 
 		return json({

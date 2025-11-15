@@ -35,27 +35,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			
 			const allTestsPassed = result.test_cases_passed === result.total_test_cases;
 			
-			// For single player mode, create or get a session ID
-			let singlePlayerSessionId = null;
-			if (!lobbyId) {
-				// Generate a session ID for single player mode
-				singlePlayerSessionId = `session_${session.user.id}_${Date.now()}`;
-			}
-			
 			// Save submission to database
 			const submissionData = {
 				user_id: session.user.id,
 				challenge_id: challengeId as string,
 				language: language as string,
 				code: code as string,
-				is_correct: allTestsPassed,
-				score: allTestsPassed ? 100 : Math.round((result.test_cases_passed / result.total_test_cases) * 100),
+				status: allTestsPassed ? 'accepted' : 'wrong_answer',
 				execution_time: result.execution_time,
-				memory_used: result.memory_used,
-				test_cases_passed: result.test_cases_passed,
+				memory_usage: result.memory_used,
+				passed_test_cases: result.test_cases_passed,
 				total_test_cases: result.total_test_cases,
-				lobby_id: lobbyId || null,
-				single_player_session_id: singlePlayerSessionId
+				...(lobbyId && { lobby_id: lobbyId }) // Add lobby_id if this is a multiplayer submission
 			};
 			
 			const { error: submissionError } = await (locals.supabase
@@ -74,8 +65,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					.select('id')
 					.eq('lobby_id', lobbyId)
 					.eq('challenge_id', challengeId)
-					.eq('is_correct', true)
-					.order('submitted_at', { ascending: true })
+					.eq('status', 'accepted')
+					.order('created_at', { ascending: true })
 					.limit(1);
 
 				// If this is the only accepted solution, they're the first to solve
@@ -99,28 +90,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		} catch (executionError) {
 			console.error('Code execution error:', executionError);
 			
-			// For single player mode, create or get a session ID
-			let singlePlayerSessionId = null;
-			if (!lobbyId) {
-				// Generate a session ID for single player mode
-				singlePlayerSessionId = `session_${session.user.id}_${Date.now()}`;
-			}
-			
 			// Save failed submission
 			const failedSubmissionData = {
 				user_id: session.user.id,
 				challenge_id: challengeId as string,
 				language: language as string,
 				code: code as string,
-				is_correct: false,
-				score: 0,
+				status: 'runtime_error',
 				execution_time: null,
-				memory_used: null,
-				test_cases_passed: 0,
+				memory_usage: null,
+				passed_test_cases: 0,
 				total_test_cases: testCases.length,
-				error_message: executionError instanceof Error ? executionError.message : 'Code execution failed',
-				lobby_id: lobbyId || null,
-				single_player_session_id: singlePlayerSessionId
+				...(lobbyId && { lobby_id: lobbyId }) // Add lobby_id if this is a multiplayer submission
 			};
 			const { error: submissionError } = await (locals.supabase
 				.from('submissions') as unknown as { insert: (data: Record<string, unknown>) => Promise<{ error?: unknown }> })

@@ -33,19 +33,13 @@
 		loading = true;
 		try {
 			const response = await fetch('/api/challenges?limit=1000&all=true');
-			
-			if (response.status === 401) {
-				// Handle unauthenticated case - still allow viewing challenges
-				console.log('Viewing challenges without authentication');
-			}
-			
-			const responseData = await response.json();
+			const data = await response.json();
 			
 			if (response.ok) {
-				allChallenges = responseData.challenges || [];
+				allChallenges = data.challenges || [];
 				applyFilters();
 			} else {
-				console.error('Failed to fetch challenges:', responseData.error);
+				console.error('Failed to fetch challenges:', data.error);
 				challenges = [];
 			}
 		} catch (error) {
@@ -194,7 +188,7 @@
 	<title>Challenges - CodeOut App</title>
 </svelte:head>
 
-<MainNavigation user={data?.user || null} profile={data?.profile || null} />
+<MainNavigation user={data.user} profile={data.profile} />
 
 <div class="min-h-screen bg-neutral-950 text-neutral-100">
 	<ChallengeHero totalChallenges={pagination.total} />

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { Play } from 'lucide-svelte';
-	
 	export let results: any = null;
 	export let isRunning = false;
 	
@@ -63,7 +61,7 @@
 			<!-- Empty State -->
 			<div class="flex items-center justify-center h-32 text-neutral-400">
 				<div class="text-center">
-					<Play class="w-8 h-8 mx-auto mb-2 text-neutral-500" />
+					<div class="text-4xl mb-2">🧪</div>
 					<p>Run your code to see test results</p>
 				</div>
 			</div>

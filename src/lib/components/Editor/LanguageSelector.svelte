@@ -9,7 +9,7 @@
 
 	let { 
 		selected = $bindable('javascript'),
-		onChange
+		onChange = () => {}
 	}: LanguageSelectorProps = $props();
 
 	let languages: ProgrammingLanguage[] = $state([]);
@@ -22,16 +22,8 @@
 
 	function handleChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
-		const newValue = target.value;
-		console.log('LanguageSelector: handleChange called', { oldValue: selected, newValue });
-		if (newValue !== selected) {
-			console.log('LanguageSelector: Language changed, updating selected and calling onChange');
-			selected = newValue;
-			onChange?.(newValue);
-			console.log('LanguageSelector: onChange callback completed');
-		} else {
-			console.log('LanguageSelector: No change detected, skipping onChange');
-		}
+		selected = target.value;
+		onChange(selected);
 	}
 </script>
 
@@ -45,7 +37,7 @@
 	{:else}
 		<select 
 			id="language-select"
-			value={selected}
+			bind:value={selected}
 			onchange={handleChange}
 			class="px-3 py-2 border border-gray-600 rounded-lg bg-neutral-800/50 text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
 		>

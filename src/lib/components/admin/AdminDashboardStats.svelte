@@ -79,7 +79,7 @@ const statCards = [
 					<p class="text-2xl font-bold text-neutral-100 mt-2">{stat.value}</p>
 				</div>
 				<div class="{stat.bgColor} {stat.borderColor} {stat.color} p-3 rounded-lg border">
-					<stat.icon class="h-6 w-6" />
+					<svelte:component this={stat.icon} class="h-6 w-6" />
 				</div>
 			</div>
 		</Card>

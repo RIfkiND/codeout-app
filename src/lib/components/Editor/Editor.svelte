@@ -94,40 +94,12 @@
 		}
 	}
 
-	// Simple language change effect
+	// Reactive language changes
 	$effect(() => {
-		if (editor && monaco && mounted && language) {
-			console.log('Editor: Language changed to:', language);
-			updateLanguageAndTemplate();
+		if (editor && monaco && mounted) {
+			updateLanguage();
 		}
 	});
-
-	async function updateLanguageAndTemplate() {
-		try {
-			if (!editor || !monaco) return;
-			
-			const monacoLang = await getMonacoLanguage(language);
-			const model = editor.getModel();
-			
-			if (model && model.getLanguageId() !== monacoLang) {
-				console.log('Editor: Updating Monaco language to:', monacoLang);
-				monaco.editor.setModelLanguage(model, monacoLang);
-			}
-			
-			// Load and set template
-			const template = await getTemplate(language);
-			if (template && template.trim()) {
-				console.log('Editor: Setting template for:', language);
-				editor.setValue(template);
-				internalValue = template;
-				value = template;
-				dispatch('change', { value: template });
-				onchange?.(template);
-			}
-		} catch (error) {
-			console.error('Editor: Failed to update language/template:', error);
-		}
-	}
 
 	// Reactive value changes
 	$effect(() => {
@@ -137,32 +109,29 @@
 		}
 	});
 
+	async function updateLanguage() {
+		if (!editor || !monaco) return;
+		const monacoLang = await getMonacoLanguage(language);
+		const currentLang = editor.getModel()?.getLanguageId();
+		
+		if (currentLang !== monacoLang) {
+			monaco.editor.setModelLanguage(editor.getModel()!, monacoLang);
+		}
+	}
+
 	// Public API
 	export function getEditor() { return editor; }
 	export function getValue() { return editor?.getValue() || ''; }
 	export function setValue(newValue: string) { 
-		console.log('setValue called with:', newValue?.substring(0, 100) + '...');
-		if (editor && newValue !== undefined) {
+		if (editor) {
 			editor.setValue(newValue);
-			console.log('Value set in Monaco editor');
 		}
 		internalValue = newValue;
 		value = newValue;
 	}
 	export async function loadTemplate() { 
-		console.log('loadTemplate called for language:', language);
-		try {
-			const template = await getTemplate(language);
-			console.log('Template fetched for', language, ':', template?.substring(0, 100) + '...');
-			if (template && template.trim()) {
-				setValue(template);
-				console.log('Template set in editor for', language);
-			} else {
-				console.warn('Empty or invalid template for language:', language);
-			}
-		} catch (error) {
-			console.error('Error in loadTemplate:', error);
-		}
+		const template = await getTemplate(language);
+		setValue(template);
 	}
 	export function focus() { editor?.focus(); }
 	export function layout() { editor?.layout(); }
