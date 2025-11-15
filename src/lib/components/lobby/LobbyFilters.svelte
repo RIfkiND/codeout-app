@@ -2,7 +2,7 @@
 	import { Search, Filter, SortAsc, Users, Trophy, Clock, Zap } from 'lucide-svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import * as Select from '$lib/components/ui/select/index';
 
 	interface Props {
 		searchQuery?: string;
@@ -33,8 +33,7 @@
 	const sortOptions = [
 		{ value: 'created_at', label: 'Newest First' },
 		{ value: 'name', label: 'Name A-Z' },
-		{ value: 'participants', label: 'Most Players' },
-		{ value: 'prize_pool', label: 'Highest Prize' }
+		{ value: 'participants', label: 'Most Players' }
 	];
 
 	const handleSearch = (e: Event) => {
@@ -86,21 +85,16 @@
 		</div>
 
 		<!-- Sort -->
-		<div class="flex h-full min-w-fit items-center gap-2">
-			<div
-				class="flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2"
-			>
+		<Select.Root type="single" onValueChange={onSortChange} bind:value={sortBy}>
+			<Select.Trigger class="w-40">
 				<SortAsc class="h-4 w-4 text-neutral-400" />
-				<select
-					value={sortBy}
-					onchange={handleSortChange}
-					class="border-none bg-transparent text-sm text-neutral-100 outline-none"
-				>
-					{#each sortOptions as option}
-						<option value={option.value} class="bg-neutral-800">{option.label}</option>
-					{/each}
-				</select>
-			</div>
-		</div>
+				{sortOptions.find((option) => option.value === sortBy)?.label}
+			</Select.Trigger>
+			<Select.Content>
+				{#each sortOptions as { value, label }}
+					<Select.Item {value} {label} />
+				{/each}
+			</Select.Content>
+		</Select.Root>
 	</div>
 </div>
