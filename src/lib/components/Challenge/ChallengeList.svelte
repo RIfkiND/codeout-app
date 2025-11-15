@@ -87,10 +87,10 @@
 								<Badge
 									class="shrink-0 {getDifficultyColor(
 										challenge.difficulty
-									)} flex items-center gap-1"
+									)} flex items-center justify-center gap-1.5"
 								>
-									<Circle class="h-1 w-1" />
-									{challenge.difficulty}
+									<Circle class="h-2 w-2" />
+									<div>{challenge.difficulty}</div>
 								</Badge>
 							</div>
 
