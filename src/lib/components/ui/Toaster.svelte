@@ -50,12 +50,12 @@
 
 <div class="fixed top-4 right-4 z-[9999] space-y-3 max-w-sm">
 	{#each toastList as toast (toast.id)}
+		{@const IconComponent = getIcon(toast.type)}
 		<div
 			class="flex items-start gap-3 p-4 rounded-lg border backdrop-blur-sm shadow-lg animate-in slide-in-from-top-2 {getTypeClasses(toast.type)}"
 			role="alert"
 		>
 			<div class="flex-shrink-0 mt-0.5">
-				{@const IconComponent = getIcon(toast.type)}
 				<IconComponent class="h-5 w-5 {getIconClasses(toast.type)}" />
 			</div>
 			

@@ -174,7 +174,7 @@
 								<Users class="h-5 w-5 mx-auto mb-1 text-blue-400" />
 								<div class="text-sm text-neutral-400">Participants</div>
 								<div class="font-semibold">
-									{formatParticipants(foundLobby.current_participants, foundLobby.max_participants)}
+									{formatParticipants(foundLobby.lobby_users?.length || 0, foundLobby.max_participants)}
 								</div>
 							</div>
 
@@ -223,7 +223,7 @@
 						<!-- Join Button -->
 						<div class="text-center">
 							{#if foundLobby.status === 'waiting'}
-								{#if foundLobby.current_participants >= foundLobby.max_participants}
+								{#if (foundLobby.lobby_users?.length || 0) >= foundLobby.max_participants}
 									<Button disabled class="w-full max-w-xs cursor-not-allowed">
 										Lobby Full
 									</Button>

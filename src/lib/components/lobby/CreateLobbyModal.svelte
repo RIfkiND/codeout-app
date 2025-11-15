@@ -7,7 +7,6 @@ import { Input } from '$lib/components/ui/input';
 import { Textarea } from '$lib/components/ui/textarea';
 import { Label } from '$lib/components/ui/label';
 import { Badge } from '$lib/components/ui/badge';
-import * as Select from '$lib/components/ui/select';
 import { showError, showSuccess } from '$lib/stores/toast';
 import { goto } from '$app/navigation';
 import LobbyBasicInfo from '$lib/components/lobby/LobbyBasicInfo.svelte';
@@ -395,8 +394,9 @@ const goBack = () => {
                           <Label class="text-sm font-medium">Available Challenges</Label>
                           <div class="max-h-64 overflow-y-auto space-y-2">
                             {#each availableChallenges.filter(c => !selectedChallenges.some(sc => sc.id === c.id)) as challenge}
-                              <div 
-                                class="flex items-center justify-between p-3 bg-neutral-800/50 border border-neutral-700 rounded-lg hover:bg-neutral-800 cursor-pointer transition-colors"
+                              <button
+                                type="button"
+                                class="w-full flex items-center justify-between p-3 bg-neutral-800/50 border border-neutral-700 rounded-lg hover:bg-neutral-800 cursor-pointer transition-colors text-left"
                                 onclick={() => toggleChallengeSelection(challenge)}
                               >
                                 <div class="flex-1">
@@ -418,7 +418,7 @@ const goBack = () => {
                                 >
                                   <Plus class="w-4 h-4" />
                                 </Button>
-                              </div>
+                              </button>
                             {/each}
                           </div>
                         </div>
@@ -454,16 +454,16 @@ const goBack = () => {
                       <div class="grid grid-cols-2 gap-4">
                         <div>
                           <Label for="challengeDifficulty">Difficulty</Label>
-                          <Select.Root bind:selected={challengeData.difficulty}>
-                            <Select.Trigger class="mt-1">
-                              <Select.Value placeholder="Select difficulty" />
-                            </Select.Trigger>
-                            <Select.Content>
-                              <Select.Item value="easy">Easy</Select.Item>
-                              <Select.Item value="medium">Medium</Select.Item>
-                              <Select.Item value="hard">Hard</Select.Item>
-                            </Select.Content>
-                          </Select.Root>
+                          <select
+                            id="challengeDifficulty"
+                            bind:value={challengeData.difficulty}
+                            class="mt-1 bg-neutral-800 border-neutral-600 text-neutral-100 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500 border"
+                            required
+                          >
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                          </select>
                         </div>
 
                         <div>

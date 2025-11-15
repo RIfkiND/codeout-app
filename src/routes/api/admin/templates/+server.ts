@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 			.eq('id', user.id)
 			.single();
 
-		if (userData?.role !== 'admin') {
+		if ((userData as { role: string } | null)?.role !== 'admin') {
 			return json({ error: 'Admin access required' }, { status: 403 });
 		}
 
@@ -58,7 +58,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.eq('id', user.id)
 			.single();
 
-		if (userData?.role !== 'admin') {
+		if ((userData as { role: string } | null)?.role !== 'admin') {
 			return json({ error: 'Admin access required' }, { status: 403 });
 		}
 
@@ -79,6 +79,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				template_data,
 				is_public: Boolean(is_public),
 				created_by: user.id
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			} as any)
 			.select()
 			.single();

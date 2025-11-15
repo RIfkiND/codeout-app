@@ -1,10 +1,7 @@
 <script lang="ts">
 	import { Copy, Share2, Link, QrCode } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import Dialog from '$lib/components/ui/dialog/dialog.svelte';
-	import DialogContent from '$lib/components/ui/dialog/dialog-content.svelte';
-	import DialogHeader from '$lib/components/ui/dialog/dialog-header.svelte';
-	import DialogTitle from '$lib/components/ui/dialog/dialog-title.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { showSuccess, showError } from '$lib/stores/toast';
 
@@ -60,14 +57,14 @@
 	}
 </script>
 
-<Dialog bind:open={isOpen}>
-	<DialogContent class="bg-neutral-900 border-neutral-800 text-white max-w-md">
-		<DialogHeader>
-			<DialogTitle class="flex items-center gap-2">
+<Dialog.Root bind:open={isOpen}>
+	<Dialog.Content class="bg-neutral-900 border-neutral-800 text-white max-w-md">
+		<Dialog.Header>
+			<Dialog.Title class="flex items-center gap-2">
 				<Share2 class="h-5 w-5 text-emerald-400" />
 				Share Lobby
-			</DialogTitle>
-		</DialogHeader>
+			</Dialog.Title>
+		</Dialog.Header>
 
 		<div class="space-y-6 py-4">
 			<!-- Lobby Info -->
@@ -166,5 +163,5 @@
 				Close
 			</Button>
 		</div>
-	</DialogContent>
-</Dialog>
+	</Dialog.Content>
+</Dialog.Root>

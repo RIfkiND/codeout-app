@@ -16,7 +16,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			.eq('id', user.id)
 			.single();
 
-		if (userData?.role !== 'admin') {
+		if ((userData as { role: string } | null)?.role !== 'admin') {
 			return json({ error: 'Admin access required' }, { status: 403 });
 		}
 
@@ -58,7 +58,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			.eq('id', user.id)
 			.single();
 
-		if (userData?.role !== 'admin') {
+		if ((userData as { role: string } | null)?.role !== 'admin') {
 			return json({ error: 'Admin access required' }, { status: 403 });
 		}
 
@@ -69,9 +69,10 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			return json({ error: 'Template ID required' }, { status: 400 });
 		}
 
-		const { data: template, error } = await locals.supabase
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const { data: template, error } = await (locals.supabase as any)
 			.from('challenge_templates')
-			.update(updateData as any)
+			.update(updateData)
 			.eq('id', templateId)
 			.select()
 			.single();

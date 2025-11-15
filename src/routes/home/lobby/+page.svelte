@@ -9,6 +9,7 @@
 	import LobbyGridWrapper from '$lib/components/lobby/LobbyGridWrapper.svelte';
 	import type { LobbyWithUsers } from '$lib/models/lobby';
 	import type { PageData } from './$types';
+	import { showSuccess, showError } from '$lib/stores/toast';
 
 	interface Props {
 		data: PageData;
@@ -53,7 +54,7 @@
 	const updateStats = () => {
 		lobbyStats = {
 			totalLobbies: lobbies.length,
-			activeLobbies: lobbies.filter(l => l.status === 'active' || l.status === 'waiting').length,
+			activeLobbies: lobbies.filter(l => l.status === 'running' || l.status === 'waiting').length,
 			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0)
 		};
 	};
@@ -100,7 +101,7 @@
 		}
 	};
 
-	const handleJoinLobby = async (lobbyId: string) => {
+	const handleJoinLobby = async (lobbyId: string): Promise<void> => {
 		try {
 			const response = await fetch(`/api/lobbies/${lobbyId}/join`, {
 				method: 'POST',
@@ -109,9 +110,16 @@
 
 			if (response.ok) {
 				await loadLobbies();
+				showSuccess('Joined Lobby', 'You have successfully joined the lobby!');
+				// Navigate to the lobby page after joining
+				window.location.href = `/home/lobby/${lobbyId}`;
+			} else {
+				const errorData = await response.json();
+				showError('Join Failed', errorData.error || 'Failed to join lobby');
 			}
 		} catch (error) {
 			console.error('Failed to join lobby:', error);
+			showError('Join Failed', 'An unexpected error occurred while joining the lobby');
 		}
 	};
 

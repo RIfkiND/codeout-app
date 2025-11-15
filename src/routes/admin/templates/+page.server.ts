@@ -14,7 +14,7 @@ export const load = (async ({ locals }) => {
 		.eq('id', user.id)
 		.single();
 
-	if (userData?.role !== 'admin') {
+	if ((userData as { role: string } | null)?.role !== 'admin') {
 		throw new Error('Admin access required');
 	}
 

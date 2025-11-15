@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, url }) => {
 		try {
 			const { session, user } = await locals.safeGetSession();
 			if (!session || !user) {
@@ -63,17 +63,15 @@ export const actions: Actions = {
 				return fail(400, { error: 'Title, description, and difficulty are required' });
 			}
 
-			// Use the existing API endpoint
-			const response = await fetch(`${locals.url?.origin || 'http://localhost:5173'}/api/challenges`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${session.access_token}`
-				},
-				body: JSON.stringify(challengeData)
-			});
-
-			const result = await response.json();
+		// Use the existing API endpoint
+		const response = await fetch(`${url.origin}/api/challenges`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${session.access_token}`
+			},
+			body: JSON.stringify(challengeData)
+		});			const result = await response.json();
 
 			if (!response.ok) {
 				return fail(response.status, { error: result.error || 'Failed to create challenge' });

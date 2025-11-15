@@ -4,7 +4,6 @@ import { Button } from '$lib/components/ui/button';
 import { Input } from '$lib/components/ui/input';
 import { Textarea } from '$lib/components/ui/textarea';
 import { Label } from '$lib/components/ui/label';
-import * as Select from '$lib/components/ui/select';
 import { X } from 'lucide-svelte';
 
 interface Language {
@@ -32,16 +31,6 @@ let formData = $state({
 });
 
 let isSubmitting = $state(false);
-
-const handleLanguageChange = (value: string) => {
-	formData.language = value;
-	
-	// Load default template for selected language
-	const language = languages.find(l => l.name === value);
-	if (language?.template_code) {
-		formData.templateCode = language.template_code;
-	}
-};
 
 const handleSubmit = async (e: Event) => {
 	e.preventDefault();
@@ -142,23 +131,24 @@ const handleClose = () => {
 
 					<!-- Language Selection -->
 					<div class="space-y-2">
-						<Label class="text-neutral-200">Programming Language *</Label>
-						<Select.Root>
-							<Select.Trigger class="bg-neutral-800 border-neutral-600 text-neutral-100">
-								<Select.Value placeholder="Select a language" />
-							</Select.Trigger>
-							<Select.Content class="bg-neutral-800 border-neutral-600">
-								{#each languages as language}
-									<Select.Item 
-										value={language.name} 
-										class="text-neutral-100 hover:bg-neutral-700"
-										onclick={() => handleLanguageChange(language.name)}
-									>
-										{language.display_name}
-									</Select.Item>
-								{/each}
-							</Select.Content>
-						</Select.Root>
+						<Label for="language" class="text-neutral-200">Programming Language *</Label>
+						<select
+							id="language"
+							bind:value={formData.language}
+							onchange={() => {
+								const language = languages.find(l => l.name === formData.language);
+								if (language?.template_code) {
+									formData.templateCode = language.template_code;
+								}
+							}}
+							class="bg-neutral-800 border-neutral-600 text-neutral-100 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500 border"
+							required
+						>
+							<option value="">Select a language</option>
+							{#each languages as language}
+								<option value={language.name}>{language.display_name}</option>
+							{/each}
+						</select>
 					</div>
 
 					<!-- Template Code -->
