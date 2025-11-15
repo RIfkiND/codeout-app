@@ -62,7 +62,7 @@
 	<div class="space-y-4">
 		{#each challenges as challenge}
 			<Card
-				class="group cursor-pointer border-neutral-800 bg-gradient-to-r from-neutral-900 to-neutral-950 transition-all duration-300 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5"
+				class="group border-neutral-800 bg-gradient-to-r from-neutral-900 to-neutral-950 transition-all duration-300 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5"
 			>
 				<CardContent class="p-6">
 					<div class="flex items-start gap-4">
