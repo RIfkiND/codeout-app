@@ -63,13 +63,15 @@
 	animate();
 </script>
 
-<div class="flex min-w-md flex-col gap-1 rounded-lg bg-[rgb(40,44,52)] p-1">
+<div class="flex w-lg flex-col gap-1 rounded-lg bg-[rgb(40,44,52)] p-1">
 	<div class="p-4">
 		{#key current}
 			<div class="font-bold text-emerald-400" transition:slide={{ delay: 500, duration: 1000 }}>
 				{problem}
 			</div>
-			<div class="text-xs" transition:slide={{ delay: 500, duration: 1000 }}>{problemDesc}</div>
+			<div class="text-xs" transition:slide={{ delay: 500, duration: 1000 }}>
+				{problemDesc}
+			</div>
 		{/key}
 	</div>
 	{#await highlighter}
