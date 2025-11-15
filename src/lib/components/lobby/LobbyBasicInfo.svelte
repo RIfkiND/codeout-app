@@ -30,7 +30,7 @@
 		<Input
 			id="name"
 			value={name}
-			onchange={handleNameChange}
+			oninput={handleNameChange}
 			placeholder="Enter lobby name"
 			required
 			class="bg-neutral-800 border-neutral-700 text-neutral-100"
@@ -42,7 +42,7 @@
 		<Input
 			id="description"
 			value={description}
-			onchange={handleDescriptionChange}
+			oninput={handleDescriptionChange}
 			placeholder="Brief description of the lobby"
 			class="bg-neutral-800 border-neutral-700 text-neutral-100"
 		/>

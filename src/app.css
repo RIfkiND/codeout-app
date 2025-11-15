@@ -120,4 +120,35 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Cursor styles for interactive elements */
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  a,
+  select,
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  .cursor-text {
+    cursor: text;
+  }
+  
+  .cursor-not-allowed,
+  button:disabled,
+  input:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
 }

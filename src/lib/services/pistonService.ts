@@ -118,7 +118,6 @@ class PistonService {
 			for (let i = 0; i < testCases.length; i++) {
 				const testCase = testCases[i];
 				const input = JSON.stringify(testCase.input);
-				const expectedOutput = JSON.stringify(testCase.output);
 				
 				const startTime = Date.now();
 				
@@ -137,7 +136,13 @@ class PistonService {
 				results.execution_time += executionTime;
 				
 				const actualOutput = result.run.stdout.trim();
-				const passed = actualOutput === expectedOutput.replace(/"/g, '');
+				const expectedStr = typeof testCase.output === 'string' ? testCase.output : JSON.stringify(testCase.output);
+				const actualStr = actualOutput.replace(/"/g, ''); // Remove quotes from JSON output
+				
+				// More flexible comparison
+				const passed = actualStr === expectedStr || 
+							   actualOutput === expectedStr || 
+							   JSON.stringify(actualStr) === JSON.stringify(expectedStr);
 				
 				if (passed) {
 					results.test_cases_passed++;
@@ -148,7 +153,7 @@ class PistonService {
 					passed,
 					time: `${executionTime}ms`,
 					input: input,
-					expected: expectedOutput,
+					expected: expectedStr,
 					actual: actualOutput,
 					stderr: result.run.stderr
 				});
@@ -164,19 +169,33 @@ class PistonService {
 		switch (language) {
 			case 'javascript':
 				return `
-					${code}
-					
-					// Test execution
-					try {
-						const input = ${input};
-						const result = twoSum ? twoSum(input.nums, input.target) : 
-									  validParentheses ? validParentheses(input.s) :
-									  maxSubArray ? maxSubArray(input.nums) :
-									  null;
-						console.log(JSON.stringify(result));
-					} catch (error) {
-						console.error(error.message);
-					}
+${code}
+
+// Test execution
+try {
+	const input = ${input};
+	const inputValues = Object.values(input);
+	
+	// Find the main function (looking for 'solution' function first)
+	let result = null;
+	if (typeof solution === 'function') {
+		result = solution(...inputValues);
+	} else {
+		// Look for any function in the code
+		const functionMatches = \`${code}\`.match(/function\\s+(\\w+)/);
+		if (functionMatches) {
+			const functionName = functionMatches[1];
+			const func = eval(functionName);
+			if (typeof func === 'function') {
+				result = func(...inputValues);
+			}
+		}
+	}
+	
+	console.log(JSON.stringify(result));
+} catch (error) {
+	console.log('Error: ' + error.message);
+}
 				`;
 			case 'python':
 				return `
@@ -187,14 +206,17 @@ ${code}
 # Test execution
 try:
 	input_data = json.loads('${input}')
-	# Try common function names
-	result = None
-	if 'twoSum' in globals():
-		result = twoSum(input_data['nums'], input_data['target'])
-	elif 'validParentheses' in globals():
-		result = validParentheses(input_data['s'])
-	elif 'maxSubArray' in globals():
-		result = maxSubArray(input_data['nums'])
+	input_values = list(input_data.values())
+	
+	# Try to call solution function
+	if 'solution' in locals():
+		result = solution(*input_values)
+	else:
+		# Find the first function defined
+		for name in locals():
+			if callable(locals()[name]) and not name.startswith('_'):
+				result = locals()[name](*input_values)
+				break
 	
 	print(json.dumps(result))
 except Exception as e:

@@ -116,17 +116,7 @@ const canJoin = (lobby: LobbyWithUsers) =>
                   </div>
                 </div>
                 
-                {#if lobby.prize_pool && lobby.prize_pool > 0}
-                  <div class="flex items-center gap-2 text-sm">
-                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
-                      <Trophy class="w-4 h-4 text-amber-400" />
-                    </div>
-                    <div>
-                      <div class="text-neutral-100 font-medium">${lobby.prize_pool}</div>
-                      <div class="text-xs text-neutral-500">Prize</div>
-                    </div>
-                  </div>
-                {/if}
+
               </div>
 
               <!-- Participants Preview -->
@@ -135,9 +125,9 @@ const canJoin = (lobby: LobbyWithUsers) =>
                   {#each (lobby.lobby_users?.slice(0, 3) || []) as participant, index}
                     <div 
                       class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-medium border-2 border-neutral-900 relative z-{10 - index}"
-                      title={participant.users.name || participant.users.email || 'Anonymous'}
+                      title={participant.users?.name || participant.users?.email || 'Anonymous'}
                     >
-                      {participant.users.name?.charAt(0) || participant.users.email?.charAt(0) || 'U'}
+                      {participant.users?.name?.charAt(0) || participant.users?.email?.charAt(0) || 'U'}
                     </div>
                   {/each}
                   {#if getParticipantCount(lobby) > 3}

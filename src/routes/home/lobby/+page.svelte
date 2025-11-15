@@ -1,3 +1,4 @@
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import LobbyCard from '$lib/components/lobby/LobbyCard.svelte';
@@ -8,6 +9,7 @@
 	import LobbyGridWrapper from '$lib/components/lobby/LobbyGridWrapper.svelte';
 	import type { LobbyWithUsers } from '$lib/models/lobby';
 	import type { PageData } from './$types';
+	import { showSuccess, showError } from '$lib/stores/toast';
 
 	interface Props {
 		data: PageData;
@@ -22,13 +24,11 @@
 	let searchQuery = $state('');
 	let selectedStatus = $state('all');
 	let sortBy = $state('created_at');
-	let lobbyStats = $state(
-		data.stats || {
-			totalLobbies: 0,
-			activeLobbies: 0,
-			totalParticipants: 0
-		}
-	);
+	let lobbyStats = $state(data.stats || {
+		totalLobbies: 0,
+		activeLobbies: 0,
+		totalParticipants: 0
+	});
 
 	const loadLobbies = async () => {
 		isLoading = true;
@@ -36,7 +36,11 @@
 			const response = await fetch('/api/lobbies');
 			if (response.ok) {
 				const data = await response.json();
-				lobbies = data.lobbies || [];
+				lobbies = (data.lobbies || []).map((lobby: any) => ({
+					...lobby,
+					// Ensure lobby_users exists even if empty
+					lobby_users: lobby.lobby_users || []
+				}));
 				updateStats();
 				filterAndSortLobbies();
 			}
@@ -50,9 +54,8 @@
 	const updateStats = () => {
 		lobbyStats = {
 			totalLobbies: lobbies.length,
-			activeLobbies: lobbies.filter((l) => l.status === 'active' || l.status === 'waiting').length,
-			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0),
-			totalPrizePool: lobbies.reduce((sum, l) => sum + (l.prize_pool || 0), 0)
+			activeLobbies: lobbies.filter(l => l.status === 'running' || l.status === 'waiting').length,
+			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0)
 		};
 	};
 
@@ -73,14 +76,9 @@
 
 		filtered.sort((a, b) => {
 			switch (sortBy) {
-				case 'name':
-					return a.name.localeCompare(b.name);
-				case 'participants':
-					return (b.lobby_users?.length || 0) - (a.lobby_users?.length || 0);
-				case 'prize_pool':
-					return (b.prize_pool || 0) - (a.prize_pool || 0);
-				default:
-					return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+				case 'name': return a.name.localeCompare(b.name);
+				case 'participants': return (b.lobby_users?.length || 0) - (a.lobby_users?.length || 0);
+				default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 			}
 		});
 
@@ -104,7 +102,7 @@
 		}
 	};
 
-	const handleJoinLobby = async (lobbyId: string) => {
+	const handleJoinLobby = async (lobbyId: string): Promise<void> => {
 		try {
 			const response = await fetch(`/api/lobbies/${lobbyId}/join`, {
 				method: 'POST',
@@ -113,9 +111,16 @@
 
 			if (response.ok) {
 				await loadLobbies();
+				showSuccess('Joined Lobby', 'You have successfully joined the lobby!');
+				// Navigate to the lobby page after joining
+				window.location.href = `/home/lobby/${lobbyId}`;
+			} else {
+				const errorData = await response.json();
+				showError('Join Failed', errorData.error || 'Failed to join lobby');
 			}
 		} catch (error) {
 			console.error('Failed to join lobby:', error);
+			showError('Join Failed', 'An unexpected error occurred while joining the lobby');
 		}
 	};
 
@@ -157,7 +162,11 @@
 			{#snippet children()}
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{#each filteredLobbies as lobby (lobby.id)}
-						<LobbyCard {lobby} onJoin={handleJoinLobby} />
+						<LobbyCard 
+							{lobby} 
+							onJoin={handleJoinLobby} 
+							currentUserId={data.user?.id}
+						/>
 					{/each}
 				</div>
 			{/snippet}

@@ -7,6 +7,7 @@
 	import type { LayoutData } from './$types';
 	import { createSupabaseLoadClient } from '$lib/supabaseClient';
 	import { setMode } from 'mode-watcher';
+	import Toaster from '$lib/components/ui/Toaster.svelte';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
 
@@ -31,3 +32,4 @@
 
 <ModeWatcher />
 {@render children?.()}
+<Toaster />

@@ -3,18 +3,20 @@ import { error } from '@sveltejs/kit';
 
 export const load = (async ({ params, locals }) => {
 	const { session } = await locals.safeGetSession();
-	
+
 	// Get lobby details with participants
 	const { data: lobby, error: lobbyError } = await locals.supabase
 		.from('lobbies')
-		.select(`
+		.select(
+			`
 			*,
 			users (name, email),
 			lobby_users (
 				joined_at,
 				users (id, name, email)
 			)
-		`)
+		`
+		)
 		.eq('id', params.id)
 		.single();
 
@@ -28,14 +30,16 @@ export const load = (async ({ params, locals }) => {
 	if (lobby && (lobbyData.status === 'running' || lobbyData.status === 'finished')) {
 		const { data: submissionsData } = await locals.supabase
 			.from('submissions')
-			.select(`
+			.select(
+				`
 				*,
 				users (name, email),
 				challenges (title)
-			`)
+			`
+			)
 			.eq('lobby_id', params.id)
 			.order('submitted_at', { ascending: false });
-			
+
 		submissions = submissionsData || [];
 	}
 

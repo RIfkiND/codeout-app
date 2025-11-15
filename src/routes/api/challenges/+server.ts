@@ -33,10 +33,8 @@ function formatSolvedCount(attempt_count?: number | null, success_rate?: number 
 
 export const GET: RequestHandler = async ({ locals, url }) => {
 	try {
+		// Get session but don't require authentication for viewing challenges
 		const { session } = await locals.safeGetSession();
-		if (!session) {
-			return json({ error: 'Authentication required' }, { status: 401 });
-		}
 
 		// Parse query parameters
 		const page = parseInt(url.searchParams.get('page') || '1');
@@ -53,61 +51,23 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const is_global = url.searchParams.get('is_global') !== 'false';
 		const fetchAll = url.searchParams.get('all') === 'true'; // New parameter for fetching all challenges
 
+		console.log('Challenges API called with:', { page, limit, fetchAll, is_global, lobby_id });
+
 		const offset = (page - 1) * limit;
 
 		// Build base query
 		let query = locals.supabase
 			.from('challenges')
-			.select(`
-				*,
-				challenge_categories (
-					categories (
-						id,
-						name
-					)
-				),
-				lobbies (
-					id,
-					name
-				)
-			`);
+			.select('*');
 
 		// Apply filters
 		if (lobby_id) {
-			query = query.eq('lobby_id', lobby_id).eq('is_global', false);
+			query = query.eq('lobby_id', lobby_id);
 		} else if (is_global) {
 			query = query.eq('is_global', true);
 		}
 
-		// When fetching all challenges, skip server-side filtering except for basic constraints
-		if (!fetchAll) {
-			if (difficulty && difficulty !== 'all') {
-				query = query.eq('difficulty', difficulty);
-			}
-
-			if (search) {
-				// Search in title and description
-				query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
-			}
-
-			if (category && categories.length === 0) {
-				// Single category filter (backwards compatibility)
-				query = query.eq('category', category);
-			}
-
-			if (categories.length > 0) {
-				// Multiple categories filter
-				query = query.in('category', categories);
-			}
-
-			if (tags.length > 0) {
-				// Tags filter - check if any of the selected tags exist in the tags array
-				const tagFilters = tags.map(tag => `tags.cs.{${tag}}`).join(',');
-				query = query.or(tagFilters);
-			}
-		}
-
-		// Apply sorting (always apply sorting)
+		// Apply sorting
 		const sortColumn = ['created_at', 'title', 'difficulty', 'view_count', 'success_rate'].includes(sortBy) 
 			? sortBy 
 			: 'created_at';
@@ -123,10 +83,12 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 		if (error) {
 			console.error('Challenges fetch error:', error);
-			return json({ error: 'Failed to fetch challenges' }, { status: 500 });
+			return json({ error: 'Failed to fetch challenges', details: error }, { status: 500 });
 		}
 
-		// For fetchAll, skip the count query and return all challenges without pagination metadata
+		console.log(`Found ${challenges?.length || 0} challenges`);
+
+		// For fetchAll, skip complex filtering and return all challenges
 		if (fetchAll) {
 			// Enhance challenges with solved count and user status if needed
 			const enhancedChallenges: EnhancedChallenge[] = (challenges as Challenge[])?.map((challenge: Challenge) => ({
@@ -157,13 +119,47 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			});
 		}
 
+		// Apply additional filters for regular queries
+		if (difficulty && difficulty !== 'all') {
+			query = query.eq('difficulty', difficulty);
+		}
+
+		if (search) {
+			// Search in title and description
+			query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+		}
+
+		if (category && categories.length === 0) {
+			// Single category filter (backwards compatibility)
+			query = query.eq('category', category);
+		}
+
+		if (categories.length > 0) {
+			// Multiple categories filter
+			query = query.in('category', categories);
+		}
+
+		if (tags.length > 0) {
+			// Tags filter - check if any of the selected tags exist in the tags array
+			const tagFilters = tags.map(tag => `tags.cs.{${tag}}`).join(',');
+			query = query.or(tagFilters);
+		}
+
+		// Re-execute query with additional filters
+		const { data: filteredChallenges, error: filteredError } = await query;
+
+		if (filteredError) {
+			console.error('Filtered challenges error:', filteredError);
+			return json({ error: 'Failed to fetch filtered challenges' }, { status: 500 });
+		}
+
 		// Get total count for pagination with same filters
 		let countQuery = locals.supabase
 			.from('challenges')
 			.select('*', { count: 'exact', head: true });
 
 		if (lobby_id) {
-			countQuery = countQuery.eq('lobby_id', lobby_id).eq('is_global', false);
+			countQuery = countQuery.eq('lobby_id', lobby_id);
 		} else if (is_global) {
 			countQuery = countQuery.eq('is_global', true);
 		}
@@ -195,8 +191,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			console.error('Count error:', countError);
 		}
 
-		// If status filter is applied, we need to filter by user's submission status
-		let enhancedChallenges: EnhancedChallenge[] = (challenges as Challenge[])?.map((challenge: Challenge) => ({
+		// Use the filtered challenges for the response
+		let enhancedChallenges: EnhancedChallenge[] = (filteredChallenges as Challenge[])?.map((challenge: Challenge) => ({
 			...challenge,
 			solved_count: formatSolvedCount(challenge.attempt_count, challenge.success_rate),
 			success_percentage: challenge.success_rate ? Math.round(challenge.success_rate) : 0,
@@ -204,7 +200,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		})) || [];
 
 		// Get user's submission status for these challenges if status filter is requested
-		if (status && session.user) {
+		if (status && session?.user) {
 			const challengeIds = enhancedChallenges.map(c => c.id);
 			const { data: submissions } = await locals.supabase
 				.from('submissions')
