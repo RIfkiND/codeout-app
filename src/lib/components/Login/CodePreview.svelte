@@ -12,16 +12,27 @@
 
 	const codeList = [
 		'',
-		`function solution(nums, target)\n    let map = new Map();\n    for (let i = 0; i < nums.length; i++) {\n        let complement = target - nums[i];\n        if (map.has(complement)) {\n            return [map.get(complement), i];\n        }\n        map.set(nums[i], i);\n    }\n    return [] // No solution found\nend`,
-		`function solution(s)\n    let left = 0;\n    let right = s.length - 1;\n    while (left < right) {\n        if (s[left] !== s[right]) {\n            return false;\n        }\n        left++;\n        right--;\n    }\n    return true\nend`,
-		`function solution(n)\n    if (n <= 1) {\n        return n;\n    }\n    let a = 0, b = 1;\n    for (let i = 2; i <= n; i++) {\n        let temp = b;\n        b = a + b;\n        a = temp;\n    }\n    return b\nend`
+		`function solution(nums, target) {\n    let map = new Map();\n    for (let i = 0; i < nums.length; i++) {\n        let complement = target - nums[i];\n        if (map.has(complement)) {\n            return [map.get(complement), i];\n        }\n        map.set(nums[i], i);\n    }\n    return [] // No solution found\n}`,
+		`function solution(s) {\n    let left = 0;\n    let right = s.length - 1;\n    while (left < right) {\n        if (s[left] !== s[right]) {\n            return false;\n        }\n        left++;\n        right--;\n    }\n    return true\n}`,
+		`function solution(n) {\n    if (n <= 1) {\n        return n;\n    }\n    let a = 0, b = 1;\n    for (let i = 2; i <= n; i++) {\n        let temp = b;\n        b = a + b;\n        a = temp;\n    }\n    return b\n}`,
+		`function solution(s, t) {\n    if (s.length !== t.length) {\n        return false;\n    }\n    const sChars = s.split('').sort().join('');\n    const tChars = t.split('').sort().join('');\n    return sChars === tChars;\n}`,
+		`function solution(n) {\n    const answer = [];\n    for (let i = 1; i <= n; i++) {\n        if (i % 3 === 0 && i % 5 === 0) {\n            answer.push(\"FizzBuzz\");\n        } else if (i % 3 === 0) {\n            answer.push(\"Fizz\");\n        } else if (i % 5 === 0) {\n            answer.push(\"Buzz\");\n        } else {\n            answer.push(String(i));\n        }\n    }\n    return answer\n}`
 	];
-	const problemList = ['Two Sum', 'Two Sum', 'Palindrome Check', 'Nth Fibonacci Number'];
+	const problemList = [
+		'Two Sum',
+		'Two Sum',
+		'Palindrome Check',
+		'Nth Fibonacci Number',
+		'Anagram Check',
+		'FizzBuzz'
+	];
 	const problemDescList = [
 		'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
 		'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
 		'Given a string s, return true if it is a palindrome (reads the same forwards and backward), and false otherwise.',
-		'Calculate the Nth Fibonacci number, where F(0) = 0, F(1) = 1, and F(n) = F(n-1) + F(n-2).'
+		'Calculate the Nth Fibonacci number, where F(0) = 0, F(1) = 1, and F(n) = F(n-1) + F(n-2).',
+		'Given two strings s and t, return true if t is an anagram of s, and false otherwise.',
+		'Given an integer n, return a string array (1-indexed) where answer[i] is "FizzBuzz", "Fizz", "Buzz", or i (as a string)'
 	];
 	let current = $state(0);
 
