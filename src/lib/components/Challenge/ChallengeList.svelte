@@ -89,6 +89,7 @@
 										challenge.difficulty
 									)} flex items-center gap-1"
 								>
+									<Circle class="h-1 w-1" />
 									{challenge.difficulty}
 								</Badge>
 							</div>
