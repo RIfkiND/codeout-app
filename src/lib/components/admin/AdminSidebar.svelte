@@ -9,8 +9,7 @@ import {
 	Settings, 
 	BarChart,
 	Shield,
-	Plus,
-	Code
+	Plus
 } from 'lucide-svelte';
 
 interface NavItem {
@@ -23,7 +22,6 @@ const navItems: NavItem[] = [
 	{ label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
 	{ label: 'Create Challenge', href: '/admin/challenges/create', icon: Plus },
 	{ label: 'Challenges', href: '/admin/challenges', icon: Trophy },
-	{ label: 'Templates', href: '/admin/templates', icon: Code },
 	{ label: 'Users', href: '/admin/users', icon: Users },
 	{ label: 'Lobbies', href: '/admin/lobbies', icon: Shield },
 	{ label: 'Submissions', href: '/admin/submissions', icon: FileText },

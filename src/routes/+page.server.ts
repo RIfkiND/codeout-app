@@ -32,23 +32,18 @@ export const load: PageServerLoad = async () => {
 			.select(`
 				id,
 				name,
+				description,
 				max_participants,
+				current_participants,
 				start_time,
 				end_time,
 				created_at,
-				users!lobbies_created_by_fkey(
-					name,
-					user_profiles(avatar_url)
-				),
-				lobby_users(
-					users(
-						name,
-						email,
-						user_profiles(avatar_url)
-					)
+				creator:creator_id(username, avatar_url),
+				participants:lobby_participants(
+					user:user_id(username, avatar_url)
 				)
 			`)
-			.eq('status', 'waiting')
+			.eq('status', 'active')
 			.order('created_at', { ascending: false })
 			.limit(5);
 
@@ -57,14 +52,13 @@ export const load: PageServerLoad = async () => {
 			.from('users')
 			.select(`
 				id,
-				name,
-				user_profiles(
-					avatar_url,
-					total_score,
-					challenges_solved
-				)
+				username,
+				avatar_url,
+				total_score,
+				challenges_solved,
+				rank
 			`)
-			.order('user_profiles.total_score', { ascending: false })
+			.order('total_score', { ascending: false })
 			.limit(10);
 
 		// Get quick start challenges (easy ones for beginners)

@@ -15,7 +15,7 @@ export const PUT: RequestHandler = async ({ request, locals, params }) => {
 		.eq('id', user.id)
 		.single();
 
-	if (!currentUser || (currentUser as { role: string }).role !== 'admin') {
+	if (!currentUser || currentUser.role !== 'admin') {
 		return json({ error: 'Admin access required' }, { status: 403 });
 	}
 
@@ -32,8 +32,7 @@ export const PUT: RequestHandler = async ({ request, locals, params }) => {
 		}
 
 		// Update user role
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const { data, error } = await (locals.supabase as any)
+		const { data, error } = await locals.supabase
 			.from('users')
 			.update({ role, updated_at: new Date().toISOString() })
 			.eq('id', userId)

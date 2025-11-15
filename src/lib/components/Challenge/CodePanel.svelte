@@ -15,21 +15,13 @@
 	let isSubmitting = $state(false);
 	let isRunning = $state(false);
 
-	function handleLanguageChange(newLanguage: string) {
-		console.log('CodePanel: Language changing from', language, 'to', newLanguage);
+	async function handleLanguageChange(newLanguage: string) {
 		language = newLanguage;
-		// Force the editor to update by clearing and setting the code
-		setTimeout(() => {
-			if (editor) {
-				console.log('CodePanel: Forcing editor update for language:', newLanguage);
-			}
-		}, 100);
+		if (!code || code.trim() === '') {
+			await editor?.loadTemplate();
+		}
 	}
 
-	function handleCodeChange(event: CustomEvent<{ value: string }>) {
-		console.log('CodePanel: Code changed:', event.detail.value?.substring(0, 50) + '...');
-		code = event.detail.value;
-	}
 
 
 	async function runCode() {
@@ -59,8 +51,8 @@
 	<div class="p-4 border-b border-neutral-700 flex items-center justify-between bg-neutral-900">
 		<div class="flex items-center gap-4">
 			<LanguageSelector 
-				bind:selected={language}
-				onChange={handleLanguageChange}
+				bind:selected={language} 
+				onChange={handleLanguageChange} 
 			/>
 		</div>
 		<!-- Actions -->
@@ -68,7 +60,7 @@
 			<button 
 				onclick={runCode}
 				disabled={isRunning}
-				class="px-4 py-2 text-sm bg-neutral-700 text-white rounded-md hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+				class="px-4 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 			>
 				{#if isRunning}
 					<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -81,7 +73,7 @@
 			<button 
 				onclick={submitCode}
 				disabled={isSubmitting}
-				class="px-4 py-2 text-sm bg-neutral-800 text-white rounded-md hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+				class="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
 			>
 				{#if isSubmitting}
 					<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -101,17 +93,20 @@
 			{language}
 			theme="vs-code-dark"
 			height="100%"
-			onchange={(value) => { 
-				console.log('Editor value changed:', value?.substring(0, 50) + '...');
-				code = value; 
-			}}
+			onchange={(value) => { code = value; }}
 		/>
 	</div>
 
 	<!-- Footer -->
-	<div class="p-3 border-t border-gray-700 bg-neutral-850 flex items-center justify-end text-sm">
-		<div class="text-white font-medium">
-			Lines: {code.split('\n').length} | Chars: {code.length} | Lang: {language.toUpperCase()}
+	<div class="p-3 border-t border-gray-700 bg-gray-800 flex items-center justify-between text-sm">
+		<button class="text-blue-400 hover:text-blue-300 flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition-colors">
+			<Upload size={16} />
+			Upload Code as File
+		</button>
+		<div class="text-gray-400">
+			Lines: <span class="text-white">{code.split('\n').length}</span> | 
+			Chars: <span class="text-white">{code.length}</span> |
+			Lang: <span class="text-white">{language.toUpperCase()}</span>
 		</div>
 	</div>
 </div>

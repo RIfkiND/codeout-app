@@ -116,7 +116,17 @@ const canJoin = (lobby: LobbyWithUsers) =>
                   </div>
                 </div>
                 
-
+                {#if lobby.prize_pool && lobby.prize_pool > 0}
+                  <div class="flex items-center gap-2 text-sm">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                      <Trophy class="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <div class="text-neutral-100 font-medium">${lobby.prize_pool}</div>
+                      <div class="text-xs text-neutral-500">Prize</div>
+                    </div>
+                  </div>
+                {/if}
               </div>
 
               <!-- Participants Preview -->

@@ -19,9 +19,7 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 			return json({ error: 'Lobby not found' }, { status: 404 });
 		}
 
-		const typedLobby = lobby as { id: string; status: string; max_participants: number };
-
-		if (typedLobby.status !== 'waiting') {
+		if (lobby.status !== 'waiting') {
 			return json({ error: 'Cannot join lobby that is not waiting' }, { status: 400 });
 		}
 
@@ -31,7 +29,7 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 			.select('*', { count: 'exact', head: true })
 			.eq('lobby_id', params.id);
 
-		if (count && count >= typedLobby.max_participants) {
+		if (count && count >= lobby.max_participants) {
 			return json({ error: 'Lobby is full' }, { status: 400 });
 		}
 
@@ -52,18 +50,14 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 			.from('lobby_users')
 			.insert({
 				lobby_id: params.id,
-				user_id: user.id,
-				is_creator: false,
-				is_ready: false
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			} as any)
+				user_id: user.id
+			})
 			.select(`
 				*,
 				users (
 					id,
 					name,
 					user_profiles (
-						username,
 						avatar_url
 					)
 				)

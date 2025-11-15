@@ -30,11 +30,11 @@
 		{ value: 'finished', label: 'Finished', icon: Trophy }
 	];
 
-const sortOptions = [
-  { value: 'created_at', label: 'Newest First' },
-  { value: 'name', label: 'Name A-Z' },
-  { value: 'participants', label: 'Most Players' }
-];
+	const sortOptions = [
+		{ value: 'created_at', label: 'Newest First' },
+		{ value: 'name', label: 'Name A-Z' },
+		{ value: 'participants', label: 'Most Players' }
+	];
 
 	const handleSearch = (e: Event) => {
 		const target = e.target as HTMLInputElement;

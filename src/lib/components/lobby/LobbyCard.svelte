@@ -1,34 +1,41 @@
 <script lang="ts">
-import { Clock, Lock, Play, Settings, Share2, Timer, Trophy, Users, Zap, Star } from 'lucide-svelte';
+import { Users, Clock, Trophy, Play, Lock, Zap, Star, Timer } from 'lucide-svelte';
 import type { LobbyWithUsers } from '$lib/models/lobby';
 import { Badge } from '$lib/components/ui/badge';
-import ShareLobbyModal from './ShareLobbyModal.svelte';
 
 interface Props {
   lobby: LobbyWithUsers;
   onJoin?: (lobbyId: string) => void;
-  currentUserId?: string;
 }
 
-let { lobby, onJoin, currentUserId }: Props = $props();
-
-let shareModalOpen = $state(false);
-let isJoining = $state(false);
-let isOwner = $derived(currentUserId === lobby.created_by);
+let { lobby, onJoin }: Props = $props();
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'running':
+    case 'active':
       return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     case 'waiting':
       return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-    case 'selecting_challenge':
-    case 'countdown':
+    case 'running':
       return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
     case 'finished':
       return 'bg-neutral-500/20 text-neutral-400 border-neutral-500/30';
     default:
       return 'bg-neutral-500/20 text-neutral-400 border-neutral-500/30';
+  }
+};
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'active':
+    case 'running':
+      return Zap;
+    case 'waiting':
+      return Clock;
+    case 'finished':
+      return Trophy;
+    default:
+      return Clock;
   }
 };
 
@@ -51,22 +58,11 @@ const formatTimeLimit = (minutes: number | null) => {
 
 const getParticipantCount = () => lobby.lobby_users?.length || 0;
 const isFull = () => getParticipantCount() >= lobby.max_participants;
-const canJoin = () => lobby.status === 'waiting' && !isFull() && !isOwner;
-const canStart = () => lobby.status === 'waiting' && isOwner && getParticipantCount() > 0;
+const canJoin = () => lobby.status === 'waiting' && !isFull();
 
-const handleJoinClick = async () => {
-  if (canJoin() && onJoin && !isJoining) {
-    isJoining = true;
-    try {
-      await onJoin(lobby.id);
-    } catch (error) {
-      console.error('Error joining lobby:', error);
-    } finally {
-      // Reset joining state after a delay to prevent rapid clicking
-      setTimeout(() => {
-        isJoining = false;
-      }, 1000);
-    }
+const handleJoinClick = () => {
+  if (canJoin() && onJoin) {
+    onJoin(lobby.id);
   }
 };
 </script>
@@ -86,15 +82,7 @@ const handleJoinClick = async () => {
       {/if}
     </div>
     <Badge class={getStatusColor(lobby.status)}>
-      {#if lobby.status === 'running'}
-        <Zap class="w-3 h-3 mr-1" />
-      {:else if lobby.status === 'waiting'}
-        <Clock class="w-3 h-3 mr-1" />
-      {:else if lobby.status === 'finished'}
-        <Trophy class="w-3 h-3 mr-1" />
-      {:else}
-        <Clock class="w-3 h-3 mr-1" />
-      {/if}
+      <svelte:component this={getStatusIcon(lobby.status)} class="w-3 h-3 mr-1" />
       {lobby.status}
     </Badge>
   </div>
@@ -121,7 +109,17 @@ const handleJoinClick = async () => {
       </div>
     </div>
 
-
+    {#if lobby.prize_pool && lobby.prize_pool > 0}
+      <div class="flex items-center gap-2 text-sm col-span-2">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+          <Trophy class="w-4 h-4 text-amber-400" />
+        </div>
+        <div>
+          <div class="text-neutral-100 font-medium">${lobby.prize_pool}</div>
+          <div class="text-xs text-neutral-500">Prize Pool</div>
+        </div>
+      </div>
+    {/if}
   </div>
 
   <!-- Participants Preview -->
@@ -154,24 +152,15 @@ const handleJoinClick = async () => {
     {#if canJoin()}
       <button
         onclick={handleJoinClick}
-        disabled={isJoining}
-        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 disabled:from-neutral-600 disabled:to-neutral-700 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25 cursor-pointer"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25"
       >
         <Play class="w-4 h-4" />
-        {isJoining ? 'Joining...' : 'Join Lobby'}
+        Join Lobby
       </button>
-    {:else if canStart()}
-      <a
-        href="/home/lobby/{lobby.id}"
-        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 cursor-pointer"
-      >
-        <Settings class="w-4 h-4" />
-        Manage Lobby
-      </a>
     {:else}
       <a 
         href="/home/lobby/{lobby.id}" 
-        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg text-sm font-medium transition-all duration-200"
       >
         <Play class="w-4 h-4" />
         {#if lobby.status === 'waiting' && isFull()}
@@ -186,23 +175,9 @@ const handleJoinClick = async () => {
       </a>
     {/if}
     
-    {#if isOwner}
-      <button
-        onclick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          shareModalOpen = true;
-        }}
-        class="inline-flex items-center justify-center px-3 py-3 bg-blue-800 hover:bg-blue-700 border border-blue-700 hover:border-blue-600 text-blue-200 rounded-lg transition-all duration-200 cursor-pointer"
-        title="Share Lobby"
-      >
-        <Share2 class="w-4 h-4" />
-      </button>
-    {/if}
-    
     <a 
       href="/home/lobby/{lobby.id}" 
-      class="inline-flex items-center justify-center px-3 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg transition-all duration-200 cursor-pointer"
+      class="inline-flex items-center justify-center px-3 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg transition-all duration-200"
       title="View Details"
     >
       <Star class="w-4 h-4" />
@@ -218,11 +193,3 @@ const handleJoinClick = async () => {
     </div>
   {/if}
 </div>
-
-{#if isOwner}
-  <ShareLobbyModal 
-    lobby={lobby}
-    isOpen={shareModalOpen}
-    onClose={() => shareModalOpen = false}
-  />
-{/if}

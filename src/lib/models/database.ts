@@ -3,9 +3,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 // Enums
 export type DifficultyLevel = "easy" | "medium" | "hard"
-export type LobbyStatus = "waiting" | "selecting_challenge" | "countdown" | "running" | "finished"
-export type ConnectionStatus = "connected" | "disconnected" | "finished"
-export type MessageType = "chat" | "system" | "announcement"
+export type LobbyStatus = "waiting" | "active" | "running" | "finished"  
 export type SessionStatus = "in_progress" | "completed"
 export type UserRole = "user" | "admin"
 
@@ -69,11 +67,9 @@ export interface Lobby {
   start_time: string | null
   end_time: string | null
   max_participants: number
+  prize_pool: number | null
   is_private: boolean | null
   time_limit_minutes: number | null
-  challenge_id: string | null  // Added for multiplayer features
-  countdown_start_time: string | null  // Added for multiplayer features
-  settings: Json | null  // Added for multiplayer features
   created_by: string
   created_at: string
   updated_at: string
@@ -84,23 +80,7 @@ export interface LobbyUser {
   lobby_id: string
   user_id: string
   joined_at: string
-  is_ready: boolean  // Added for multiplayer features
-  is_creator: boolean  // Added for multiplayer features
-  final_score: number  // Added for multiplayer features
-  final_rank: number | null  // Added for multiplayer features
-  connection_status: ConnectionStatus  // Added for multiplayer features
 }
-
-export interface LobbyMessage {
-  id: string
-  lobby_id: string
-  user_id: string | null
-  message: string
-  message_type: MessageType
-  created_at: string
-}
-
-
 
 export interface Submission {
   id: string
@@ -118,8 +98,6 @@ export interface Submission {
   total_test_cases: number
   error_message: string | null
   submitted_at: string
-  rank: number | null  // Added for multiplayer features
-  completion_time_ms: number | null  // Added for multiplayer features
   language_version: string | null
   output: string | null
   compilation_error: string | null
@@ -271,21 +249,12 @@ export interface ChallengeWithCategories extends Challenge {
   }>
 }
 
-// Insert types for new tables
-export type LobbyMessageInsert = Omit<LobbyMessage, 'id' | 'created_at'> & {
-  id?: string
-  created_at?: string
-}
-
-export type LobbyMessageUpdate = Partial<LobbyMessage>
-
 // Legacy compatibility - maintains the old Database structure for existing imports
 export type Database = {
   public: {
     Tables: {
       users: { Row: User, Insert: UserInsert, Update: UserUpdate }
       lobbies: { Row: Lobby, Insert: LobbyInsert, Update: LobbyUpdate }
-      lobby_messages: { Row: LobbyMessage, Insert: LobbyMessageInsert, Update: LobbyMessageUpdate }
       challenges: { Row: Challenge, Insert: ChallengeInsert, Update: ChallengeUpdate }
       submissions: { Row: Submission, Insert: SubmissionInsert, Update: SubmissionUpdate }
       lobby_users: { Row: LobbyUser, Insert: LobbyUserInsert, Update: LobbyUserUpdate }
@@ -299,8 +268,6 @@ export type Database = {
     Enums: {
       difficulty_level: DifficultyLevel
       lobby_status: LobbyStatus
-      connection_status: ConnectionStatus
-      message_type: MessageType
       session_status: SessionStatus
       user_role: UserRole
     }
