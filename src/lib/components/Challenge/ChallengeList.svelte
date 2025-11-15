@@ -77,18 +77,6 @@
 						</div>
 
 						<!-- Challenge Info -->
-<<<<<<< HEAD
-						<div class="flex-1 min-w-0">
-							<div class="flex items-start justify-between gap-4 mb-4">
-							<h3 class="font-semibold text-lg text-neutral-100 group-hover:text-emerald-400 transition-colors">
-								{challenge.title}
-							</h3>
-							<Badge class="shrink-0 {getDifficultyColor(challenge.difficulty)} flex items-center gap-1">
-								<svelte:component this={getDifficultyIcon(challenge.difficulty)} class="w-3 h-3" />
-								{challenge.difficulty}
-							</Badge>
-						</div>							<!-- Stats and Actions -->
-=======
 						<div class="min-w-0 flex-1">
 							<div class="mb-2 flex items-start justify-between gap-4">
 								<h3
@@ -107,7 +95,6 @@
 							</div>
 
 							<!-- Stats and Actions -->
->>>>>>> 9c2e0691afbe9a7fe122e07f1411d61292aa478e
 							<div class="flex items-center justify-between">
 								<div class="flex items-center gap-6 text-sm text-neutral-400">
 									<div class="flex items-center gap-1">
