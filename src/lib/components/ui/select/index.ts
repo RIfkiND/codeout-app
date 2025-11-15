@@ -9,11 +9,13 @@ import Separator from "./select-separator.svelte";
 import ScrollDownButton from "./select-scroll-down-button.svelte";
 import ScrollUpButton from "./select-scroll-up-button.svelte";
 import GroupHeading from "./select-group-heading.svelte";
+import Value from "./select-value.svelte";
 
 const Root = SelectPrimitive.Root;
 
 export {
 	Root,
+	Value,
 	Group,
 	Label,
 	Item,
@@ -25,6 +27,7 @@ export {
 	GroupHeading,
 	//
 	Root as Select,
+	Value as SelectValue,
 	Group as SelectGroup,
 	Label as SelectLabel,
 	Item as SelectItem,

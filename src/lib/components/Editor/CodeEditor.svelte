@@ -1,22 +1,26 @@
 <script lang="ts">
 	import Editor from './Editor.svelte';
 	import LanguageSelector from './LanguageSelector.svelte';
+	import { Play } from 'lucide-svelte';
 
-	export let initialCode: string = '';
+	interface CodeEditorProps {
+		initialCode?: string;
+	}
+
+	let { initialCode = '' }: CodeEditorProps = $props();
 
 	let editor: Editor;
-	let code = initialCode;
-	let language = 'javascript';
+	let code = $state(initialCode);
+	let language = $state('javascript');
 
 	async function handleLanguageChange(newLanguage: string) {
 		language = newLanguage;
-		if (!code || code.trim() === '') {
-			await editor?.loadTemplate();
-		}
+		// Always load template when language changes
+		await editor?.loadTemplate();
 	}
 
-	function handleCodeChange(event: CustomEvent<{ value: string }>) {
-		code = event.detail.value;
+	function handleCodeChange(value: string) {
+		code = value;
 	}
 
 	function runCode() {
@@ -37,7 +41,7 @@
 	}
 </script>
 
-<div class="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-200">
+<div class="flex flex-col gap-4 p-4 bg-neutral-900 rounded-lg border border-neutral-700">
 	<!-- Language Controls -->
 	<div class="flex items-center justify-between">
 		<LanguageSelector 
@@ -47,16 +51,17 @@
 		
 		<div class="flex gap-2">
 			<button 
-				on:click={resetCode}
-				class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+				onclick={resetCode}
+				class="px-3 py-1.5 text-sm border border-neutral-600 bg-neutral-800 text-neutral-200 rounded-md hover:bg-neutral-700 transition-colors"
 			>
 				Reset
 			</button>
 			<button 
-				on:click={runCode}
-				class="px-4 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+				onclick={runCode}
+				class="px-4 py-1.5 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors flex items-center gap-2"
 			>
-				▶ Run
+				<Play class="w-4 h-4" />
+				Run
 			</button>
 		</div>
 	</div>
@@ -67,13 +72,13 @@
 		bind:value={code}
 		{language}
 		height="400px"
-		on:change={handleCodeChange}
+		onchange={handleCodeChange}
 	/>
 	
 	<!-- Stats -->
-	<div class="text-xs text-gray-500 flex justify-between">
+	<div class="text-xs text-white flex justify-between font-medium">
 		<span>Lines: {code.split('\n').length}</span>
-		<span>Characters: {code.length}</span>
-		<span>Language: {language.toUpperCase()}</span>
+		<span>Chars: {code.length}</span>
+		<span>Lang: {language.toUpperCase()}</span>
 	</div>
 </div>

@@ -51,7 +51,7 @@
 				id="maxParticipants"
 				type="number"
 				value={maxParticipants}
-				onchange={handleMaxParticipantsChange}
+				oninput={handleMaxParticipantsChange}
 				min="2"
 				max="50"
 				class="bg-neutral-800 border-neutral-700 text-neutral-100"
@@ -67,7 +67,7 @@
 				id="timeLimit"
 				type="number"
 				value={timeLimit}
-				onchange={handleTimeLimitChange}
+				oninput={handleTimeLimitChange}
 				min="15"
 				max="180"
 				class="bg-neutral-800 border-neutral-700 text-neutral-100"

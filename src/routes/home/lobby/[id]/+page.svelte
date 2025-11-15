@@ -1,12 +1,14 @@
+
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { 
 		Users, Clock, Trophy, Play, MessageCircle, Crown, 
 		ArrowLeft, Settings, Copy, ExternalLink, User,
-		Timer, Calendar, Target, Award, Zap, CheckCircle
+		Timer, Calendar, Target, Award, Zap, CheckCircle, X
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -14,6 +16,8 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import type { LobbyWithUsers } from '$lib/models/lobby';
+	import { showSuccess, showError } from '$lib/stores/toast';
+	import LobbySettingsModal from '$lib/components/lobby/LobbySettingsModal.svelte';
 
 	// Extended interface to include creator info
 	interface LobbyWithCreator extends LobbyWithUsers {
@@ -53,6 +57,7 @@
 	let isJoining = $state(false);
 	let activeTab = $state('overview');
 	let currentUser = $state(data.user); // Get from session data
+	let showSettings = $state(false);
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
@@ -103,11 +108,22 @@
 			});
 			
 			if (response.ok) {
-				// Refresh lobby data
-				location.reload();
+				// Refresh lobby data using SvelteKit invalidation
+				await invalidateAll();
+				// Update local lobby data
+				const updatedResponse = await fetch(`/api/lobbies/${lobby.id}`);
+				if (updatedResponse.ok) {
+					const updatedData = await updatedResponse.json();
+					lobby = updatedData.lobby;
+					showSuccess('Joined Lobby', 'You have successfully joined the lobby!');
+				}
+			} else {
+				const errorData = await response.json();
+				showError('Join Failed', errorData.error || 'Failed to join lobby');
 			}
 		} catch (error) {
 			console.error('Failed to join lobby:', error);
+			showError('Join Failed', 'An unexpected error occurred while joining the lobby');
 		} finally {
 			isJoining = false;
 		}
@@ -123,16 +139,87 @@
 			});
 			
 			if (response.ok) {
-				location.reload();
+				await invalidateAll();
+				// Update local lobby data
+				const updatedResponse = await fetch(`/api/lobbies/${lobby.id}`);
+				if (updatedResponse.ok) {
+					const updatedData = await updatedResponse.json();
+					lobby = updatedData.lobby;
+					showSuccess('Lobby Started', 'The lobby has been started successfully!');
+				}
+			} else {
+				const errorData = await response.json();
+				showError('Start Failed', errorData.error || 'Failed to start lobby');
 			}
 		} catch (error) {
 			console.error('Failed to start lobby:', error);
+			showError('Start Failed', 'An unexpected error occurred while starting the lobby');
 		}
 	};
 
-	const copyLobbyLink = () => {
-		navigator.clipboard.writeText(window.location.href);
-		// TODO: Show toast notification
+	const copyLobbyLink = async () => {
+		try {
+			await navigator.clipboard.writeText(window.location.href);
+			showSuccess('Link Copied', 'Lobby link has been copied to clipboard!');
+		} catch (error) {
+			console.error('Failed to copy link:', error);
+			showError('Copy Failed', 'Failed to copy lobby link');
+		}
+	};
+
+	const handleLobbyUpdate = async (updateData: any) => {
+		try {
+			const response = await fetch(`/api/lobbies/${lobby.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(updateData)
+			});
+
+			if (response.ok) {
+				await invalidateAll();
+				// Update local lobby data
+				const updatedResponse = await fetch(`/api/lobbies/${lobby.id}`);
+				if (updatedResponse.ok) {
+					const updatedData = await updatedResponse.json();
+					lobby = updatedData.lobby;
+				}
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to update lobby');
+			}
+		} catch (error) {
+			console.error('Failed to update lobby:', error);
+			throw error;
+		}
+	};
+
+	const handleLobbyDelete = async () => {
+		try {
+			const response = await fetch(`/api/lobbies/${lobby.id}`, {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' }
+			});
+
+			if (response.ok) {
+				// Navigate back to lobbies list
+				goto('/home/lobby');
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to delete lobby');
+			}
+		} catch (error) {
+			console.error('Failed to delete lobby:', error);
+			throw error;
+		}
+	};
+
+	const handleLobbyStart = async () => {
+		try {
+			await handleStartLobby();
+			showSettings = false; // Close settings modal
+		} catch (error) {
+			console.error('Failed to start lobby:', error);
+		}
 	};
 </script>
 
@@ -230,9 +317,12 @@
 						<Button
 							variant="outline"
 							size="sm"
+							onclick={() => showSettings = true}
 							class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+							title="Lobby Settings"
 						>
-							<Settings class="w-4 h-4" />
+							<Settings class="w-4 h-4 mr-2" />
+							Settings
 						</Button>
 					{/if}
 				</div>
@@ -265,18 +355,7 @@
 				</CardContent>
 			</Card>
 			
-			{#if lobby.prize_pool && lobby.prize_pool > 0}
-				<Card class="bg-neutral-900 border-neutral-800">
-					<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle class="text-sm font-medium text-neutral-200">Prize Pool</CardTitle>
-						<Trophy class="h-4 w-4 text-orange-400" />
-					</CardHeader>
-					<CardContent>
-						<div class="text-2xl font-bold text-neutral-100">${lobby.prize_pool}</div>
-						<p class="text-xs text-neutral-400">Total rewards</p>
-					</CardContent>
-				</Card>
-			{/if}
+
 			
 			<Card class="bg-neutral-900 border-neutral-800">
 				<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -494,3 +573,13 @@
 		</Tabs>
 	</div>
 </div>
+
+<!-- Lobby Settings Modal -->
+<LobbySettingsModal 
+	isOpen={showSettings}
+	lobby={lobby}
+	onClose={() => showSettings = false}
+	onUpdate={handleLobbyUpdate}
+	onDelete={handleLobbyDelete}
+	onStart={handleLobbyStart}
+/>
