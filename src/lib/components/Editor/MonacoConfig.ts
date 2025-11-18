@@ -6,13 +6,19 @@ let monaco: typeof Monaco | null = null;
 export async function initMonaco() {
 	if (monaco) return monaco;
 
+	// Use faster CDN for better caching
 	loader.config({
 		paths: {
-			vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs'
+			vs: 'https://unpkg.com/monaco-editor@0.54.0/min/vs'
 		}
 	});
 
-	monaco = await loader.init();
+	try {
+		monaco = await loader.init();
+	} catch (error) {
+		console.error('Failed to initialize Monaco Editor:', error);
+		throw error;
+	}
 
 	// VS Code Dark+ theme
 	monaco.editor.defineTheme('vs-code-dark', {

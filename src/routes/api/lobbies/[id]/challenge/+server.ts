@@ -1,6 +1,17 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
+// Type definition for lobby challenge
+interface LobbyChallenge {
+	id: string;
+	lobby_id: string;
+	challenge_id: string;
+	challenge_order: number;
+	status: string;
+	created_at: string;
+	updated_at: string;
+}
+
 export const GET: RequestHandler = async ({ params, locals }) => {
 	try {
 		const { data: { user }, error: authError } = await locals.supabase.auth.getUser();
@@ -120,7 +131,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		}
 
 		// Get current lobby challenge info
-		const { data: lobbyChallenge } = await locals.supabase
+		const { data: lobbyChallengeData, error: lobbyChallengeError } = await locals.supabase
 			.from('lobby_challenges')
 			.select('*')
 			.eq('lobby_id', lobbyId)
@@ -128,7 +139,8 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			.eq('status', 'active')
 			.single();
 
-		if (!lobbyChallenge) {
+		const lobbyChallenge = lobbyChallengeData as LobbyChallenge | null;
+		if (lobbyChallengeError || !lobbyChallenge) {
 			return json({ error: 'This challenge is not currently active' }, { status: 400 });
 		}
 

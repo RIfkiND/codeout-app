@@ -54,7 +54,14 @@
 	let interval: NodeJS.Timeout | null = null;
 	let testResults = $state<ExecutionResult | null>(null);
 
+	let isLoading = $state(false);
+	let hasInitialLoad = $state(false);
+
 	const fetchChallengeData = async () => {
+		// Prevent concurrent requests
+		if (isLoading) return;
+		
+		isLoading = true;
 		try {
 			const response = await fetch(`/api/lobbies/${lobbyId}/challenge`);
 			if (response.ok) {
@@ -74,10 +81,22 @@
 
 				submissions = data.submissions || [];
 				standings = data.standings || [];
+				hasInitialLoad = true;
+			} else {
+				if (response.status === 404) {
+					console.log('No challenge data available yet');
+				} else {
+					console.error('Failed to fetch challenge data - HTTP', response.status);
+				}
 			}
 		} catch (error) {
 			console.error('Failed to fetch challenge data:', error);
-			showError('Load Error', 'Failed to load challenge data');
+			// Only show error on initial load failure
+			if (!hasInitialLoad) {
+				showError('Load Error', 'Failed to load challenge data');
+			}
+		} finally {
+			isLoading = false;
 		}
 	};
  
@@ -239,21 +258,30 @@
 	};
 
 	onMount(() => {
+		// Initial load
 		fetchChallengeData();
 		
-		// Set up polling for real-time updates
-		const pollInterval = setInterval(fetchChallengeData, 5000);
+		// Set up reduced polling for real-time updates (every 15 seconds instead of 5)
+		const pollInterval = setInterval(fetchChallengeData, 15000);
 		
 		// Set up timer
 		if (challengeData?.lobby?.end_time) {
 			interval = setInterval(updateTimer, 1000);
 			updateTimer();
 		}
-
-		onDestroy(() => {
+		
+		// Cleanup function
+		return () => {
 			clearInterval(pollInterval);
 			if (interval) clearInterval(interval);
-		});
+		};
+	});
+
+	onDestroy(() => {
+		if (interval) {
+			clearInterval(interval);
+			interval = null;
+		}
 	});
 </script>
 
@@ -296,11 +324,29 @@
 			<div class="flex-1 flex flex-col">
 				<!-- Problem description -->
 				<div class="p-6 bg-neutral-900 border-b border-neutral-800 max-h-64 overflow-y-auto">
-					<div class="prose prose-invert prose-sm max-w-none">
-						{@html ((currentChallenge as Challenge)?.description || 'Loading challenge description...').replace(/\n/g, '<br>')}
-					</div>
-					
-					{#if (currentChallenge as Challenge)?.input_example && (currentChallenge as Challenge)?.output_example}
+				<div class="prose prose-invert prose-sm max-w-none">
+					{#if isLoading && !hasInitialLoad}
+						<div class="flex items-center gap-3 text-neutral-400 py-8">
+							<div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+							<div>
+								<p class="text-lg font-medium">Loading Challenge...</p>
+								<p class="text-sm">Preparing your coding environment</p>
+							</div>
+						</div>
+					{:else if currentChallenge?.description}
+						{@html ((currentChallenge as Challenge)?.description || '').replace(/\n/g, '<br>')}
+					{:else if hasInitialLoad}
+						<div class="flex items-center gap-2 text-neutral-400 py-4">
+							<Zap class="w-4 h-4" />
+							<span>No challenge selected yet. Waiting for lobby owner to start a challenge.</span>
+						</div>
+					{:else}
+						<div class="flex items-center gap-2 text-neutral-400 py-4">
+							<Clock class="w-4 h-4 animate-pulse" />
+							<span>Connecting...</span>
+						</div>
+					{/if}
+				</div>					{#if (currentChallenge as Challenge)?.input_example && (currentChallenge as Challenge)?.output_example}
 						<div class="mt-4 grid grid-cols-2 gap-4">
 							<div>
 								<h4 class="font-semibold text-neutral-200 mb-2">Example Input:</h4>

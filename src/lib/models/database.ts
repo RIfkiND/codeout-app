@@ -177,6 +177,44 @@ export interface MediaFile {
   created_at: string
 }
 
+// Multi-challenge lobby tables
+export interface LobbyChallenge {
+  id: string
+  lobby_id: string
+  challenge_id: string
+  challenge_order: number
+  status: 'pending' | 'active' | 'completed'
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface LobbyChallengeSubmission {
+  id: string
+  lobby_id: string
+  challenge_id: string
+  user_id: string
+  submission_id: string | null
+  challenge_order: number
+  completion_time_ms: number | null
+  score: number
+  rank: number | null
+  is_completed: boolean
+  created_at: string
+}
+
+export interface LobbyStanding {
+  id: string
+  lobby_id: string
+  user_id: string
+  total_score: number
+  challenges_completed: number
+  average_completion_time_ms: number | null
+  final_rank: number | null
+  created_at: string
+  updated_at: string
+}
+
 // Insert types (optional fields)
 export type UserInsert = Omit<User, 'created_at' | 'updated_at'> & {
   created_at?: string
@@ -236,6 +274,22 @@ export type MediaFileInsert = Omit<MediaFile, 'id' | 'created_at'> & {
   created_at?: string
 }
 
+export type LobbyChallengeInsert = Omit<LobbyChallenge, 'id' | 'created_at'> & {
+  id?: string
+  created_at?: string
+}
+
+export type LobbyChallengeSubmissionInsert = Omit<LobbyChallengeSubmission, 'id' | 'created_at'> & {
+  id?: string
+  created_at?: string
+}
+
+export type LobbyStandingInsert = Omit<LobbyStanding, 'id' | 'created_at' | 'updated_at'> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+}
+
 // Update types (all fields optional)
 export type UserUpdate = Partial<User>
 export type UserProfileUpdate = Partial<UserProfile>
@@ -248,6 +302,9 @@ export type SubmissionUpdate = Partial<Submission>
 export type SinglePlayerSessionUpdate = Partial<SinglePlayerSession>
 export type ProgrammingLanguageUpdate = Partial<ProgrammingLanguage>
 export type MediaFileUpdate = Partial<MediaFile>
+export type LobbyChallengeUpdate = Partial<LobbyChallenge>
+export type LobbyChallengeSubmissionUpdate = Partial<LobbyChallengeSubmission>
+export type LobbyStandingUpdate = Partial<LobbyStanding>
 
 // Extended types with relations
 export interface UserWithProfile extends User {
@@ -289,6 +346,9 @@ export type Database = {
       challenges: { Row: Challenge, Insert: ChallengeInsert, Update: ChallengeUpdate }
       submissions: { Row: Submission, Insert: SubmissionInsert, Update: SubmissionUpdate }
       lobby_users: { Row: LobbyUser, Insert: LobbyUserInsert, Update: LobbyUserUpdate }
+      lobby_challenges: { Row: LobbyChallenge, Insert: LobbyChallengeInsert, Update: LobbyChallengeUpdate }
+      lobby_challenge_submissions: { Row: LobbyChallengeSubmission, Insert: LobbyChallengeSubmissionInsert, Update: LobbyChallengeSubmissionUpdate }
+      lobby_standings: { Row: LobbyStanding, Insert: LobbyStandingInsert, Update: LobbyStandingUpdate }
       categories: { Row: Category, Insert: CategoryInsert, Update: CategoryUpdate }
       challenge_categories: { Row: ChallengeCategory, Insert: ChallengeCategoryInsert, Update: ChallengeCategoryUpdate }
       user_profiles: { Row: UserProfile, Insert: UserProfileInsert, Update: UserProfileUpdate }

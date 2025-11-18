@@ -19,6 +19,7 @@
 	import { showSuccess, showError } from '$lib/stores/toast';
 	import LobbySettingsModal from '$lib/components/lobby/LobbySettingsModal.svelte';
 	import LiveChallengeInterface from '$lib/components/lobby/LiveChallengeInterface.svelte';
+	import LiveScoreDashboard from '$lib/components/lobby/LiveScoreDashboard.svelte';
 	import ChallengeSelectionModal from '$lib/components/lobby/ChallengeSelectionModal.svelte';
 
 	// Extended interface to include creator info
@@ -132,13 +133,13 @@
 		}
 	};
 
-	const handleChallengesSelected = async (selectedChallenges: any[], mode: 'single' | 'tournament') => {
+	const handleChallengesSelected = async (challengeIds: string[], mode: string) => {
 		try {
 			const response = await fetch(`/api/lobbies/${lobby.id}/start`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
-					challengeIds: selectedChallenges.map(c => c.id),
+					challengeIds,
 					mode 
 				})
 			});
@@ -227,6 +228,17 @@
 			showError('Start Failed', 'Failed to start lobby selection');
 		}
 	};
+
+	// Reactive statement to redirect to challenge page if active challenge exists
+	$effect(() => {
+		if (lobby.status === 'running' && lobby.lobby_challenges?.length > 0) {
+			const activeChallenges = lobby.lobby_challenges.filter((lc: any) => lc.status === 'active');
+			if (activeChallenges.length > 0) {
+				const activeChallenge = activeChallenges[0];
+				goto(`/home/lobby/${lobby.id}/challenge/${activeChallenge.challenges.id}`);
+			}
+		}
+	});
 </script>
 
 <!-- Show live challenge interface when lobby is running -->
@@ -381,14 +393,15 @@
 
 		<!-- Main Content Tabs -->
 		<Tabs value={activeTab} onValueChange={(value: string) => activeTab = value} class="w-full">
-			<TabsList class="grid w-full grid-cols-4 bg-neutral-900 border border-neutral-800">
-				<TabsTrigger value="overview" class="text-neutral-300 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
-				<TabsTrigger value="participants" class="text-neutral-300 data-[state=active]:text-neutral-100">Participants</TabsTrigger>
-				<TabsTrigger value="submissions" class="text-neutral-300 data-[state=active]:text-neutral-100">Submissions</TabsTrigger>
-				<TabsTrigger value="chat" class="text-neutral-300 data-[state=active]:text-neutral-100">Chat</TabsTrigger>
-			</TabsList>
-			
-			<TabsContent value="overview" class="space-y-6">
+		<TabsList class="grid w-full {isCreator() ? 'grid-cols-5' : 'grid-cols-4'} bg-neutral-900 border border-neutral-800">
+			<TabsTrigger value="overview" class="text-neutral-300 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
+			<TabsTrigger value="participants" class="text-neutral-300 data-[state=active]:text-neutral-100">Participants</TabsTrigger>
+			<TabsTrigger value="submissions" class="text-neutral-300 data-[state=active]:text-neutral-100">Submissions</TabsTrigger>
+			{#if isCreator()}
+				<TabsTrigger value="dashboard" class="text-neutral-300 data-[state=active]:text-neutral-100">Live Dashboard</TabsTrigger>
+			{/if}
+			<TabsTrigger value="chat" class="text-neutral-300 data-[state=active]:text-neutral-100">Chat</TabsTrigger>
+		</TabsList>			<TabsContent value="overview" class="space-y-6">
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					<Card class="bg-neutral-900 border-neutral-800">
 						<CardHeader>
@@ -561,6 +574,12 @@
 				</Card>
 			</TabsContent>
 			
+			{#if isCreator()}
+				<TabsContent value="dashboard" class="space-y-6">
+					<LiveScoreDashboard lobbyId={lobby.id} isOwner={true} />
+				</TabsContent>
+			{/if}
+			
 			<TabsContent value="chat" class="space-y-4">
 				<Card class="bg-neutral-900 border-neutral-800">
 					<CardHeader>
@@ -598,6 +617,6 @@
 <!-- Challenge Selection Modal -->
 <ChallengeSelectionModal 
 	isOpen={showChallengeSelection}
-	onSubmit={handleChallengesSelected}
+	onStart={handleChallengesSelected}
 	onClose={() => showChallengeSelection = false}
 />

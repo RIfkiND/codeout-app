@@ -1,22 +1,23 @@
 <script lang="ts">
-import { Clock, Lock, Play, Settings, Share2, Timer, Trophy, Users, Zap, Star } from 'lucide-svelte';
+import { Clock, Lock, Play, Settings, Share2, Timer, Trophy, Users, Zap, Star, MoreHorizontal, Trash2 } from 'lucide-svelte';
 import type { LobbyWithUsers } from '$lib/models/lobby';
 import { Badge } from '$lib/components/ui/badge';
 import ShareLobbyModal from './ShareLobbyModal.svelte';
 
-interface Props {
-  lobby: LobbyWithUsers;
-  onJoin?: (lobbyId: string) => void;
-  currentUserId?: string;
-}
+	interface Props {
+		lobby: LobbyWithUsers;
+		onJoin?: (lobbyId: string) => void;
+		onDelete?: (lobbyId: string) => void;
+		currentUserId?: string;
+	}
 
-let { lobby, onJoin, currentUserId }: Props = $props();
+	let { lobby, onJoin, onDelete, currentUserId }: Props = $props();
 
-let shareModalOpen = $state(false);
-let isJoining = $state(false);
-let isOwner = $derived(currentUserId === lobby.created_by);
-
-const getStatusColor = (status: string) => {
+	let shareModalOpen = $state(false);
+	let showMenu = $state(false);
+	let isJoining = $state(false);
+	let isDeleting = $state(false);
+	let isOwner = $derived(currentUserId === lobby.created_by);const getStatusColor = (status: string) => {
   switch (status) {
     case 'running':
       return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
@@ -52,7 +53,7 @@ const formatTimeLimit = (minutes: number | null) => {
 const getParticipantCount = () => lobby.lobby_users?.length || 0;
 const isFull = () => getParticipantCount() >= lobby.max_participants;
 const canJoin = () => lobby.status === 'waiting' && !isFull() && !isOwner;
-const canStart = () => lobby.status === 'waiting' && isOwner && getParticipantCount() > 0;
+const canStart = () => isOwner && ['waiting', 'selecting_challenge', 'countdown', 'running'].includes(lobby.status);
 
 const handleJoinClick = async () => {
   if (canJoin() && onJoin && !isJoining) {
@@ -130,9 +131,9 @@ const handleJoinClick = async () => {
       {#each (lobby.lobby_users?.slice(0, 4) || []) as participant, index}
         <div 
           class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-medium border-2 border-neutral-900 relative z-{10 - index}"
-          title={participant.users.name || participant.users.email || 'Anonymous'}
+          title={participant.users?.name || participant.users?.email || 'Anonymous'}
         >
-          {participant.users.name?.charAt(0) || participant.users.email?.charAt(0) || 'U'}
+          {participant.users?.name?.charAt(0) || participant.users?.email?.charAt(0) || 'U'}
         </div>
       {/each}
       {#if getParticipantCount() > 4}
@@ -168,16 +169,25 @@ const handleJoinClick = async () => {
         <Settings class="w-4 h-4" />
         Manage Lobby
       </a>
+    {:else if isOwner}
+      <!-- Owner can always manage their lobby -->
+      <a
+        href="/home/lobby/{lobby.id}"
+        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25 cursor-pointer"
+      >
+        <Settings class="w-4 h-4" />
+        Manage Lobby
+      </a>
     {:else}
       <a 
-        href="/home/lobby/{lobby.id}" 
+        href="/home/lobby/challenge/{lobby.id}" 
         class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer"
       >
         <Play class="w-4 h-4" />
         {#if lobby.status === 'waiting' && isFull()}
           Lobby Full
         {:else if lobby.status === 'running'}
-          View Live
+          Join Challenge
         {:else if lobby.status === 'finished'}
           View Results
         {:else}

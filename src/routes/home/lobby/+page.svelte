@@ -18,7 +18,7 @@
 	let { data }: Props = $props();
 
 	let lobbies: LobbyWithUsers[] = $state((data.lobbies as unknown as LobbyWithUsers[]) || []);
-	let filteredLobbies: LobbyWithUsers[] = $state([]);
+	let filteredLobbies: LobbyWithUsers[] = $state((data.lobbies as unknown as LobbyWithUsers[]) || []);
 	let isLoading = $state(false);
 	let showCreateModal = $state(false);
 	let searchQuery = $state('');
@@ -30,20 +30,25 @@
 		totalParticipants: 0
 	});
 	let refreshInterval: NodeJS.Timeout;
+	let debounceTimeout: NodeJS.Timeout;
 
 	const loadLobbies = async () => {
+		// Prevent concurrent requests
+		if (isLoading) return;
+		
+		console.log('loadLobbies called');
 		isLoading = true;
 		try {
 			const response = await fetch('/api/lobbies');
 			if (response.ok) {
 				const data = await response.json();
+				// Update lobbies data
 				lobbies = (data.lobbies || []).map((lobby: any) => ({
 					...lobby,
-					// Ensure lobby_users exists even if empty
 					lobby_users: lobby.lobby_users || []
 				}));
 				updateStats();
-				filterAndSortLobbies();
+				// Don't call filterAndSortLobbies here - let effect handle it
 			}
 		} catch (error) {
 			console.error('Failed to load lobbies:', error);
@@ -55,12 +60,18 @@
 	const updateStats = () => {
 		lobbyStats = {
 			totalLobbies: lobbies.length,
-			activeLobbies: lobbies.filter(l => ['pending', 'active', 'running', 'challenge_transition'].includes(l.status)).length,
+			activeLobbies: lobbies.filter(l => ['waiting', 'selecting_challenge', 'countdown', 'running'].includes(l.status)).length,
 			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0)
 		};
 	};
 
 	const filterAndSortLobbies = () => {
+		// Skip filtering if no lobbies to avoid unnecessary work
+		if (!lobbies || lobbies.length === 0) {
+			filteredLobbies = [];
+			return;
+		}
+		
 		let filtered = [...lobbies];
 
 		if (searchQuery.trim()) {
@@ -73,7 +84,8 @@
 
 		if (selectedStatus !== 'all') {
 			if (selectedStatus === 'active') {
-				filtered = filtered.filter((lobby) => ['pending', 'active', 'running', 'challenge_transition'].includes(lobby.status));
+				// Match actual database status values: waiting, selecting_challenge, countdown, running
+				filtered = filtered.filter((lobby) => ['waiting', 'selecting_challenge', 'countdown', 'running'].includes(lobby.status));
 			} else {
 				filtered = filtered.filter((lobby) => lobby.status === selectedStatus);
 			}
@@ -100,10 +112,16 @@
 
 			if (response.ok) {
 				showCreateModal = false;
-				await loadLobbies();
+				// Force immediate refresh without waiting for interval
+				setTimeout(() => loadLobbies(), 100);
+				showSuccess('Lobby Created', 'Your lobby has been created successfully!');
+			} else {
+				const errorData = await response.json();
+				showError('Creation Failed', errorData.error || 'Failed to create lobby');
 			}
 		} catch (error) {
 			console.error('Failed to create lobby:', error);
+			showError('Creation Failed', 'An unexpected error occurred');
 		}
 	};
 
@@ -129,22 +147,68 @@
 		}
 	};
 
+	const handleDeleteLobby = async (lobbyId: string): Promise<void> => {
+		try {
+			const response = await fetch(`/api/lobbies/${lobbyId}`, {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' }
+			});
+
+			if (response.ok) {
+				await loadLobbies();
+				showSuccess('Lobby Deleted', 'The lobby has been deleted successfully!');
+			} else {
+				const errorData = await response.json();
+				showError('Delete Failed', errorData.error || 'Failed to delete lobby');
+			}
+		} catch (error) {
+			console.error('Failed to delete lobby:', error);
+			showError('Delete Failed', 'An unexpected error occurred while deleting the lobby');
+		}
+	};
+
+	// Track when initial data is loaded
+	let initialLoad = $state(true);
+	
+	// Only filter when specific dependencies change
 	$effect(() => {
-		filterAndSortLobbies();
+		// Track specific dependencies to prevent infinite loops
+		const query = searchQuery;
+		const status = selectedStatus; 
+		const sort = sortBy;
+		const currentLobbies = lobbies; // Track lobbies changes
+		
+		// Run immediately on initial load or when lobbies change
+		if (initialLoad || currentLobbies !== lobbies) {
+			filterAndSortLobbies();
+			if (initialLoad) {
+				initialLoad = false;
+			}
+			return;
+		}
+		
+		// Debounce only search input to improve performance
+		clearTimeout(debounceTimeout);
+		debounceTimeout = setTimeout(() => {
+			filterAndSortLobbies();
+		}, 300); // 300ms debounce for search
 	});
 
 	onMount(() => {
-		filterAndSortLobbies();
-		
-		// Set up real-time updates every 3 seconds
+		// Set up real-time updates every 10 seconds (reduced frequency to prevent overload)
 		refreshInterval = setInterval(async () => {
-			await loadLobbies();
-		}, 3000);
+			if (!isLoading && document.visibilityState === 'visible') { // Only refresh when page is visible
+				await loadLobbies();
+			}
+		}, 10000); // 10 seconds instead of 5
 		
 		// Cleanup on unmount
 		return () => {
 			if (refreshInterval) {
 				clearInterval(refreshInterval);
+			}
+			if (debounceTimeout) {
+				clearTimeout(debounceTimeout);
 			}
 		};
 	});
@@ -153,8 +217,16 @@
 <div class="min-h-screen bg-neutral-950 p-4 text-neutral-100">
 	<div class="mx-auto max-w-7xl">
 		<LobbyHeader
-			onRefresh={loadLobbies}
-			onCreate={() => (showCreateModal = true)}
+			onRefresh={() => {
+				console.log('Refresh function called from parent');
+				loadLobbies();
+			}}
+			onCreate={() => {
+				console.log('Create function called from parent');
+				console.log('Current showCreateModal state:', showCreateModal);
+				showCreateModal = true;
+				console.log('New showCreateModal state:', showCreateModal);
+			}}
 			{isLoading}
 			lobbies={lobbies as unknown as Record<string, unknown>[]}
 		/>
@@ -181,7 +253,8 @@
 					{#each filteredLobbies as lobby (lobby.id)}
 						<LobbyCard 
 							{lobby} 
-							onJoin={handleJoinLobby} 
+							onJoin={handleJoinLobby}
+							onDelete={handleDeleteLobby}
 							currentUserId={data.user?.id}
 						/>
 					{/each}

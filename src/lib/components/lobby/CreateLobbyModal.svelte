@@ -20,6 +20,10 @@ interface Props {
 
 let { isOpen = false, onClose, onSubmit }: Props = $props();
 
+$effect(() => {
+  console.log('CreateLobbyModal isOpen changed:', isOpen);
+});
+
 let currentStep = $state(0);
 
 // Multi-challenge state
