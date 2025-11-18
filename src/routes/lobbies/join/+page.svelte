@@ -68,11 +68,11 @@
 				body: JSON.stringify({ lobby_code: lobbyCode.trim().toUpperCase() })
 			});
 
-			if (response.ok) {
-				const result = await response.json();
-				showSuccess('Joined Successfully!', result.message);
-				goto(`/lobbies/${foundLobby.id}`);
-			} else {
+		if (response.ok) {
+			const result = await response.json();
+			showSuccess('Joined Successfully!', result.message);
+			goto(`/home/lobby/${foundLobby.id}`);
+		} else {
 				const error = await response.json();
 				showError('Join Failed', error.error || 'Unable to join lobby');
 			}
@@ -180,8 +180,8 @@
 
 							<div class="text-center p-3 bg-neutral-800/50 rounded-lg">
 								<Clock class="h-5 w-5 mx-auto mb-1 text-yellow-400" />
-								<div class="text-sm text-neutral-400">Time Limit</div>
-								<div class="font-semibold">{foundLobby.time_limit_minutes}m</div>
+								<div class="text-sm text-neutral-400">Duration</div>
+								<div class="font-semibold">{foundLobby.duration}m</div>
 							</div>
 
 							<div class="text-center p-3 bg-neutral-800/50 rounded-lg">
@@ -192,25 +192,35 @@
 
 							<div class="text-center p-3 bg-neutral-800/50 rounded-lg">
 								<Gamepad2 class="h-5 w-5 mx-auto mb-1 text-purple-400" />
-								<div class="text-sm text-neutral-400">Mode</div>
-								<div class="font-semibold capitalize">{foundLobby.challenge_mode || 'Single'}</div>
+								<div class="text-sm text-neutral-400">Challenges</div>
+								<div class="font-semibold">{foundLobby.lobby_challenges?.length || 0}</div>
 							</div>
 						</div>
 
-						<!-- Current Challenge -->
-						{#if foundLobby.current_challenge}
+						<!-- Challenges Preview -->
+						{#if foundLobby.lobby_challenges && foundLobby.lobby_challenges.length > 0}
 							<div class="bg-neutral-800/30 rounded-lg p-4">
-								<h3 class="font-semibold mb-2">Current Challenge</h3>
-								<div class="flex items-center justify-between">
-									<div>
-										<div class="font-medium">{foundLobby.current_challenge.title}</div>
-										<div class="text-sm text-neutral-400">
-											{foundLobby.current_challenge.description}
+								<h3 class="font-semibold mb-2">Challenges ({foundLobby.lobby_challenges.length})</h3>
+								<div class="space-y-2">
+									{#each foundLobby.lobby_challenges.slice(0, 2) as lobbyChallenge}
+										{@const challenge = lobbyChallenge.challenges}
+										<div class="flex items-center justify-between">
+											<div>
+												<div class="font-medium">{challenge.title}</div>
+												<div class="text-sm text-neutral-400 truncate">
+													{challenge.description}
+												</div>
+											</div>
+											<div class="px-3 py-1 rounded-full text-xs font-medium {getDifficultyColor(challenge.difficulty)}">
+												{challenge.difficulty}
+											</div>
 										</div>
-									</div>
-									<div class="px-3 py-1 rounded-full text-xs font-medium {getDifficultyColor(foundLobby.current_challenge.difficulty)}">
-										{foundLobby.current_challenge.difficulty}
-									</div>
+									{/each}
+									{#if foundLobby.lobby_challenges.length > 2}
+										<div class="text-sm text-neutral-400 text-center">
+											...and {foundLobby.lobby_challenges.length - 2} more
+										</div>
+									{/if}
 								</div>
 							</div>
 						{/if}
@@ -255,7 +265,7 @@
 		<div class="text-center mt-8">
 			<Button
 				variant="outline"
-				onclick={() => goto('/lobbies')}
+				onclick={() => goto('/home/lobby')}
 				class="border-neutral-700 text-neutral-300 hover:bg-neutral-800 cursor-pointer"
 			>
 				Back to Lobbies

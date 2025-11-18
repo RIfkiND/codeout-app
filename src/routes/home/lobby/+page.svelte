@@ -29,6 +29,7 @@
 		activeLobbies: 0,
 		totalParticipants: 0
 	});
+	let refreshInterval: NodeJS.Timeout;
 
 	const loadLobbies = async () => {
 		isLoading = true;
@@ -54,7 +55,7 @@
 	const updateStats = () => {
 		lobbyStats = {
 			totalLobbies: lobbies.length,
-			activeLobbies: lobbies.filter(l => l.status === 'running' || l.status === 'waiting').length,
+			activeLobbies: lobbies.filter(l => ['pending', 'active', 'running', 'challenge_transition'].includes(l.status)).length,
 			totalParticipants: lobbies.reduce((sum, l) => sum + (l.lobby_users?.length || 0), 0)
 		};
 	};
@@ -71,7 +72,11 @@
 		}
 
 		if (selectedStatus !== 'all') {
-			filtered = filtered.filter((lobby) => lobby.status === selectedStatus);
+			if (selectedStatus === 'active') {
+				filtered = filtered.filter((lobby) => ['pending', 'active', 'running', 'challenge_transition'].includes(lobby.status));
+			} else {
+				filtered = filtered.filter((lobby) => lobby.status === selectedStatus);
+			}
 		}
 
 		filtered.sort((a, b) => {
@@ -130,6 +135,18 @@
 
 	onMount(() => {
 		filterAndSortLobbies();
+		
+		// Set up real-time updates every 3 seconds
+		refreshInterval = setInterval(async () => {
+			await loadLobbies();
+		}, 3000);
+		
+		// Cleanup on unmount
+		return () => {
+			if (refreshInterval) {
+				clearInterval(refreshInterval);
+			}
+		};
 	});
 </script>
 

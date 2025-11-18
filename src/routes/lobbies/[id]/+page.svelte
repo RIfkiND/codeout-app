@@ -1,20 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
-	// Redirect to home/lobby since we're consolidating to one lobby system
+	// Redirect old lobby detail routes to home/lobby system
 	onMount(() => {
-		goto('/home/lobby', { replaceState: true });
+		const lobbyId = $page.params.id;
+		goto(`/home/lobby/${lobbyId}`, { replaceState: true });
 	});
 </script>
 
 <svelte:head>
-	<title>Redirecting to Lobbies - CodeOut</title>
+	<title>Redirecting - CodeOut</title>
 </svelte:head>
 
 <div class="min-h-screen bg-neutral-950 flex items-center justify-center">
 	<div class="text-center text-neutral-100">
 		<div class="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-		<p>Redirecting to lobbies...</p>
+		<p>Redirecting to lobby...</p>
 	</div>
 </div>

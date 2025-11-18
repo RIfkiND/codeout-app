@@ -21,7 +21,7 @@
 <div class="min-h-screen bg-neutral-950">
 	<HomeHero />
 	<PlatformStats stats={data.stats} />
-	<QuickStart challenges={data.quickStartChallenges} />
+	<QuickStart challenges={data.quickStartChallenges} user={data.user} />
 	<SkillBadges />
 	<LiveLobbies lobbies={data.activeLobbies} />
 	<GlobalLeaderboard users={data.leaderboard} />

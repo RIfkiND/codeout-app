@@ -18,6 +18,8 @@
 	import type { LobbyWithUsers } from '$lib/models/lobby';
 	import { showSuccess, showError } from '$lib/stores/toast';
 	import LobbySettingsModal from '$lib/components/lobby/LobbySettingsModal.svelte';
+	import LiveChallengeInterface from '$lib/components/lobby/LiveChallengeInterface.svelte';
+	import ChallengeSelectionModal from '$lib/components/lobby/ChallengeSelectionModal.svelte';
 
 	// Extended interface to include creator info
 	interface LobbyWithCreator extends LobbyWithUsers {
@@ -58,6 +60,7 @@
 	let activeTab = $state('overview');
 	let currentUser = $state(data.user); // Get from session data
 	let showSettings = $state(false);
+	let showChallengeSelection = $state(false);
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
@@ -129,16 +132,19 @@
 		}
 	};
 
-	const handleStartLobby = async () => {
-		if (!canStart()) return;
-		
+	const handleChallengesSelected = async (selectedChallenges: any[], mode: 'single' | 'tournament') => {
 		try {
 			const response = await fetch(`/api/lobbies/${lobby.id}/start`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' }
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					challengeIds: selectedChallenges.map(c => c.id),
+					mode 
+				})
 			});
 			
 			if (response.ok) {
+				showChallengeSelection = false;
 				await invalidateAll();
 				// Update local lobby data
 				const updatedResponse = await fetch(`/api/lobbies/${lobby.id}`);
@@ -215,16 +221,28 @@
 
 	const handleLobbyStart = async () => {
 		try {
-			await handleStartLobby();
-			showSettings = false; // Close settings modal
+			showChallengeSelection = true;
 		} catch (error) {
 			console.error('Failed to start lobby:', error);
+			showError('Start Failed', 'Failed to start lobby selection');
 		}
 	};
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
-	<div class="max-w-7xl mx-auto">
+<!-- Show live challenge interface when lobby is running -->
+{#if lobby.status === 'running' || lobby.status === 'selecting_challenge'}
+	<LiveChallengeInterface 
+		lobbyId={lobby.id} 
+		initialData={{
+			lobby,
+			submissions,
+			currentUserId: currentUser?.id
+		}}
+	/>
+{:else}
+	<!-- Regular lobby interface for waiting/finished states -->
+	<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
+		<div class="max-w-7xl mx-auto">
 		<!-- Header -->
 		<div class="flex items-center gap-4 mb-6">
 			<Button 
@@ -244,16 +262,14 @@
 				<div class="flex-1">
 					<div class="flex items-center gap-3 mb-2">
 						<h1 class="text-3xl font-bold">{lobby.name}</h1>
-						<Badge class={getStatusColor(lobby.status)}>
-							{#if lobby.status === 'running'}
-								<Zap class="w-3 h-3 mr-1" />
-							{:else if lobby.status === 'waiting'}
-								<Clock class="w-3 h-3 mr-1" />
-							{:else if lobby.status === 'finished'}
-								<CheckCircle class="w-3 h-3 mr-1" />
-							{/if}
-							{lobby.status}
-						</Badge>
+					<Badge class={getStatusColor(lobby.status)}>
+						{#if lobby.status === 'waiting'}
+							<Clock class="w-3 h-3 mr-1" />
+						{:else if lobby.status === 'finished'}
+							<CheckCircle class="w-3 h-3 mr-1" />
+						{/if}
+						{lobby.status}
+					</Badge>
 						{#if lobby.is_private}
 							<Badge variant="outline" class="border-amber-500/30 text-amber-400">
 								Private
@@ -295,21 +311,15 @@
 							<Play class="w-4 h-4 mr-2" />
 							{isJoining ? 'Joining...' : 'Join Lobby'}
 						</Button>
-					{:else if canStart()}
+					{/if}
+					
+					{#if canStart()}
 						<Button
-							onclick={handleStartLobby}
+							onclick={handleLobbyStart}
 							class="bg-emerald-600 hover:bg-emerald-700"
 						>
 							<Play class="w-4 h-4 mr-2" />
 							Start Lobby
-						</Button>
-					{:else if lobby.status === 'running' && isParticipant()}
-						<Button
-							onclick={() => goto(`/challenge?lobbyId=${lobby.id}`)}
-							class="bg-blue-600 hover:bg-blue-700"
-						>
-							<ExternalLink class="w-4 h-4 mr-2" />
-							Enter Challenge
 						</Button>
 					{/if}
 					
@@ -573,6 +583,7 @@
 		</Tabs>
 	</div>
 </div>
+{/if}
 
 <!-- Lobby Settings Modal -->
 <LobbySettingsModal 
@@ -582,4 +593,11 @@
 	onUpdate={handleLobbyUpdate}
 	onDelete={handleLobbyDelete}
 	onStart={handleLobbyStart}
+/>
+
+<!-- Challenge Selection Modal -->
+<ChallengeSelectionModal 
+	isOpen={showChallengeSelection}
+	onSubmit={handleChallengesSelected}
+	onClose={() => showChallengeSelection = false}
 />
