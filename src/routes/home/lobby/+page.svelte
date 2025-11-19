@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import LobbyCard from '$lib/components/lobby/LobbyCard.svelte';
 	import CreateLobbyModal from '$lib/components/lobby/CreateLobbyModal.svelte';
+	import JoinLobbyModal from '$lib/components/lobby/JoinLobbyModal.svelte';
 	import LobbyFilters from '$lib/components/lobby/LobbyFilters.svelte';
 	import LobbyStats from '$lib/components/lobby/LobbyStats.svelte';
 	import LobbyHeader from '$lib/components/lobby/LobbyHeader.svelte';
@@ -21,6 +22,7 @@
 	let filteredLobbies: LobbyWithUsers[] = $state((data.lobbies as unknown as LobbyWithUsers[]) || []);
 	let isLoading = $state(false);
 	let showCreateModal = $state(false);
+	let showJoinModal = $state(false);
 	let searchQuery = $state('');
 	let selectedStatus = $state('all');
 	let sortBy = $state('created_at');
@@ -227,6 +229,10 @@
 				showCreateModal = true;
 				console.log('New showCreateModal state:', showCreateModal);
 			}}
+			onJoin={() => {
+				console.log('Join function called from parent');
+				showJoinModal = true;
+			}}
 			{isLoading}
 			lobbies={lobbies as unknown as Record<string, unknown>[]}
 		/>
@@ -268,4 +274,10 @@
 	isOpen={showCreateModal}
 	onClose={() => (showCreateModal = false)}
 	onSubmit={handleCreateLobby}
+/>
+
+<JoinLobbyModal
+	isOpen={showJoinModal}
+	onClose={() => (showJoinModal = false)}
+	userId={data.user?.id || ''}
 />

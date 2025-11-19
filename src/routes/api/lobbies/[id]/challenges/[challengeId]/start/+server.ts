@@ -1,70 +1,76 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { supabase } from '$lib/supabaseClient';
 
-export const POST: RequestHandler = async ({ params, cookies }) => {
+export const POST: RequestHandler = async ({ params, locals }) => {
 	const { id: lobbyId, challengeId } = params;
 	
 	try {
-		// Get user from session
-		const sessionToken = cookies.get('session');
-		if (!sessionToken) {
+		// Get authenticated user
+		const { data: { user }, error: userError } = await locals.supabase.auth.getUser();
+		if (userError || !user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const { data: session, error: sessionError } = await supabase.auth.getSession();
-		if (sessionError || !session.session?.user) {
-			return json({ error: 'Unauthorized' }, { status: 401 });
-		}
-
-		const userId = session.session.user.id;
+		const userId = user.id;
 
 		// Check if user is lobby owner
-		const { data: lobby, error: lobbyError } = await supabase
+		const { data: lobbyData, error: lobbyError } = await locals.supabase
 			.from('lobbies')
 			.select('created_by, status')
 			.eq('id', lobbyId)
 			.single();
 
-		if (lobbyError || !lobby) {
+		if (lobbyError || !lobbyData) {
 			return json({ error: 'Lobby not found' }, { status: 404 });
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const lobby = lobbyData as any;
 		if (lobby.created_by !== userId) {
 			return json({ error: 'Only lobby owner can start challenges' }, { status: 403 });
 		}
 
 		// Get challenge details
-		const { data: challenge, error: challengeError } = await supabase
+		const { data: challengeData, error: challengeError } = await locals.supabase
 			.from('challenges')
 			.select('title, difficulty')
 			.eq('id', challengeId)
 			.single();
 
-		if (challengeError || !challenge) {
+		if (challengeError || !challengeData) {
 			return json({ error: 'Challenge not found' }, { status: 404 });
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const challenge = challengeData as any;
+
 		// Check if challenge is already in lobby
-		const { data: lobbyChallenge, error: lobbyChallengeError } = await supabase
+		const { data: lobbyChallengeData, error: lobbyChallengeError } = await locals.supabase
 			.from('lobby_challenges')
 			.select('id, status')
 			.eq('lobby_id', lobbyId)
 			.eq('challenge_id', challengeId)
 			.single();
 
-		if (lobbyChallengeError || !lobbyChallenge) {
+		if (lobbyChallengeError || !lobbyChallengeData) {
 			return json({ error: 'Challenge not found in this lobby' }, { status: 404 });
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const lobbyChallenge = lobbyChallengeData as any;
+
 		// Update challenge status to active
-		const { error: updateError } = await supabase
+		const updateData = { 
+			status: 'active',
+			started_at: new Date().toISOString()
+		};
+
+		const updateQuery = locals.supabase
 			.from('lobby_challenges')
-			.update({ 
-				status: 'active',
-				started_at: new Date().toISOString()
-			})
+			.update(updateData)
 			.eq('id', lobbyChallenge.id);
+
+		const { error: updateError } = await updateQuery;
 
 		if (updateError) {
 			console.error('Failed to start challenge:', updateError);
@@ -73,13 +79,17 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 
 		// Update lobby status if needed
 		if (lobby.status === 'waiting') {
-			await supabase
+			const lobbyUpdateData = { 
+				status: 'running',
+				start_time: new Date().toISOString()
+			};
+
+			const lobbyUpdateQuery = locals.supabase
 				.from('lobbies')
-				.update({ 
-					status: 'running',
-					start_time: new Date().toISOString()
-				})
+				.update(lobbyUpdateData)
 				.eq('id', lobbyId);
+
+			await lobbyUpdateQuery;
 		}
 
 		return json({ 

@@ -1,5 +1,48 @@
 import type { PageServerLoad } from './$types';
 
+// Type definitions for the complex joined query
+interface LobbyUser {
+	joined_at: string;
+	users: {
+		id: string;
+		name: string | null;
+		email: string | null;
+	};
+}
+
+interface LobbyChallenge {
+	id: string;
+	challenge_id: string;
+	challenge_order: number;
+	status: string;
+	started_at: string | null;
+	challenges: {
+		id: string;
+		title: string;
+		description: string;
+		difficulty: string;
+		time_limit: number | null;
+		testcases: unknown;
+		input_example: string | null;
+		output_example: string | null;
+	};
+}
+
+interface LobbyWithRelations {
+	id: string;
+	name: string;
+	description: string | null;
+	status: string;
+	max_participants: number;
+	is_private: boolean;
+	created_at: string;
+	time_limit_minutes: number | null;
+	created_by: string;
+	lobby_users: LobbyUser[] | null;
+	lobby_challenges: LobbyChallenge[] | null;
+	[key: string]: unknown; // For other potential fields
+}
+
 export const load = (async ({ locals, params }) => {
 	try {
 		const { supabase } = locals;
@@ -50,16 +93,19 @@ export const load = (async ({ locals, params }) => {
 			throw new Error('Lobby not found');
 		}
 
+		// Type assert the lobby data
+		const typedLobby = lobby as LobbyWithRelations;
+
 		// Check if user is participant or owner
-		const isParticipant = lobby.lobby_users?.some((lu: any) => lu.users.id === user.id);
-		const isOwner = lobby.created_by === user.id;
+		const isParticipant = typedLobby.lobby_users?.some((lu) => lu.users.id === user.id);
+		const isOwner = typedLobby.created_by === user.id;
 
 		if (!isParticipant && !isOwner) {
 			throw new Error('You are not a participant of this lobby');
 		}
 
 		// Get current active challenge
-		const activeChallenge = lobby.lobby_challenges?.find((lc: any) => lc.status === 'active');
+		const activeChallenge = typedLobby.lobby_challenges?.find((lc) => lc.status === 'active');
 
 		// Get user submissions for this lobby
 		const { data: submissions } = await supabase
@@ -89,7 +135,7 @@ export const load = (async ({ locals, params }) => {
 			.order('total_score', { ascending: false });
 
 		return {
-			lobby,
+			lobby: typedLobby,
 			activeChallenge,
 			submissions: submissions || [],
 			standings: standings || [],

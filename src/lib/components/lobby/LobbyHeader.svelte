@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { RotateCw, Plus } from 'lucide-svelte';
+	import { RotateCw, Plus, UserPlus } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ExportButton from '$lib/components/lobby/ExportButton.svelte';
 
 	interface Props {
 		onRefresh?: () => void;
 		onCreate?: () => void;
+		onJoin?: () => void;
 		isLoading?: boolean;
 		lobbies?: Record<string, unknown>[];
 	}
 
-	let { onRefresh, onCreate, isLoading = false, lobbies = [] }: Props = $props();
+	let { onRefresh, onCreate, onJoin, isLoading = false, lobbies = [] }: Props = $props();
 	
 	const handleRefresh = () => {
 		console.log('Refresh button clicked');
@@ -23,6 +24,13 @@
 		console.log('Create button clicked');
 		if (onCreate) {
 			onCreate();
+		}
+	};
+	
+	const handleJoin = () => {
+		console.log('Join button clicked');
+		if (onJoin) {
+			onJoin();
 		}
 	};
 </script>
@@ -52,6 +60,14 @@
 		>
 			<Plus class="w-4 h-4 mr-2" />
 			Create Lobby
+		</button>
+
+		<button
+			onclick={handleJoin}
+			class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 py-2"
+		>
+			<UserPlus class="w-4 h-4 mr-2" />
+			Join Lobby
 		</button>
 	</div>
 </div>

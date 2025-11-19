@@ -21,12 +21,22 @@
 	import LiveScoreDashboard from '$lib/components/lobby/LiveScoreDashboard.svelte';
 	import ChallengeSelectionModal from '$lib/components/lobby/ChallengeSelectionModal.svelte';
 
-	// Extended interface to include creator info
+	// Extended interface to include creator info and challenges
 	interface LobbyWithCreator extends LobbyWithUsers {
 		users?: {
 			name: string | null;
 			email: string | null;
 		};
+		lobby_challenges?: Array<{
+			id: string;
+			lobby_id: string;
+			challenge_id: string;
+			challenge_order: number;
+			status: 'pending' | 'active' | 'completed';
+			started_at: string | null;
+			completed_at: string | null;
+			created_at: string;
+		}>;
 	}
 
 	interface SubmissionWithDetails {
@@ -230,7 +240,7 @@
 
 	// Reactive statement to redirect non-owners to challenge page if active challenge exists
 	$effect(() => {
-		if (lobby.status === 'running' && lobby.lobby_challenges?.length > 0 && !isCreator()) {
+		if (lobby.status === 'running' && lobby.lobby_challenges && lobby.lobby_challenges.length > 0 && !isCreator()) {
 			const activeChallenges = lobby.lobby_challenges.filter((lc: any) => lc.status === 'active');
 			if (activeChallenges.length > 0) {
 				// Redirect participants to the challenge waiting room/interface
@@ -240,60 +250,9 @@
 	});
 </script>
 
-<!-- Show live score dashboard for owners when lobby is running -->
-{#if lobby.status === 'running' && isCreator()}
-	<div class="min-h-screen bg-neutral-950 text-neutral-100">
-		<div class="max-w-7xl mx-auto p-4">
-			<!-- Header -->
-			<div class="flex items-center gap-4 mb-6">
-				<Button 
-					variant="ghost" 
-					size="sm" 
-					onclick={() => goto('/home/lobby')}
-					class="text-neutral-400 hover:text-neutral-100"
-				>
-					<ArrowLeft class="w-4 h-4 mr-2" />
-					Back to Lobbies
-				</Button>
-				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
-				<Badge class={getStatusColor(lobby.status)}>
-					<Timer class="w-3 h-3 mr-1" />
-					Live Challenge
-				</Badge>
-			</div>
-			
-			<!-- Live Score Dashboard -->
-			<LiveScoreDashboard lobbyId={lobby.id} />
-		</div>
-	</div>
-{:else if lobby.status === 'selecting_challenge' && isCreator()}
-	<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
-		<div class="max-w-7xl mx-auto">
-			<div class="flex items-center gap-4 mb-6">
-				<Button 
-					variant="ghost" 
-					size="sm" 
-					onclick={() => goto('/home/lobby')}
-					class="text-neutral-400 hover:text-neutral-100"
-				>
-					<ArrowLeft class="w-4 h-4 mr-2" />
-					Back to Lobbies
-				</Button>
-				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
-			</div>
-			
-			<div class="text-center py-12">
-				<Timer class="w-16 h-16 mx-auto mb-4 text-amber-400 animate-pulse" />
-				<h2 class="text-2xl font-bold mb-2">Select Challenge</h2>
-				<p class="text-neutral-400">Use the challenge selection modal to start a challenge</p>
-			</div>
-		</div>
-	</div>
-{:else}
-	<!-- Regular lobby interface for waiting/finished states -->
-	<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
-		<div class="max-w-7xl mx-auto">
-		<!-- Header -->
+<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
+	<div class="max-w-7xl mx-auto">
+		<!-- Global Header -->
 		<div class="flex items-center gap-4 mb-6">
 			<Button 
 				variant="ghost" 
@@ -304,202 +263,322 @@
 				<ArrowLeft class="w-4 h-4 mr-2" />
 				Back to Lobbies
 			</Button>
+			{#if lobby.status === 'running' && isCreator()}
+				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
+				<Badge class={getStatusColor(lobby.status)}>
+					<Timer class="w-3 h-3 mr-1" />
+					Live Challenge
+				</Badge>
+			{:else if lobby.status === 'selecting_challenge' && isCreator()}
+				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
+			{/if}
 		</div>
+		
+		<!-- Show live score dashboard for owners when lobby is running -->
+		{#if lobby.status === 'running' && isCreator()}
+			<LiveScoreDashboard lobbyId={lobby.id} isOwner={true} />
+		{:else if lobby.status === 'selecting_challenge' && isCreator()}
+			<div class="text-center py-12">
+				<Timer class="w-16 h-16 mx-auto mb-4 text-amber-400 animate-pulse" />
+				<h2 class="text-2xl font-bold mb-2">Select Challenge</h2>
+				<p class="text-neutral-400">Use the challenge selection modal to start a challenge</p>
+			</div>
+		{:else}
+			<!-- Regular lobby interface for waiting/finished states -->
 
-		<!-- Lobby Info Header -->
-		<div class="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 rounded-xl p-6 mb-6">
-			<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-				<div class="flex-1">
-					<div class="flex items-center gap-3 mb-2">
-						<h1 class="text-3xl font-bold">{lobby.name}</h1>
-					<Badge class={getStatusColor(lobby.status)}>
-						{#if lobby.status === 'waiting'}
-							<Clock class="w-3 h-3 mr-1" />
-						{:else if lobby.status === 'finished'}
-							<CheckCircle class="w-3 h-3 mr-1" />
-						{/if}
-						{lobby.status}
-					</Badge>
-						{#if lobby.is_private}
-							<Badge variant="outline" class="border-amber-500/30 text-amber-400">
-								Private
+			<!-- Lobby Info Header -->
+			<div class="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 rounded-xl p-6 mb-6">
+				<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+					<div class="flex-1">
+						<div class="flex items-center gap-3 mb-2">
+							<h1 class="text-3xl font-bold">{lobby.name}</h1>
+							<Badge class={getStatusColor(lobby.status)}>
+								{#if lobby.status === 'waiting'}
+									<Clock class="w-3 h-3 mr-1" />
+								{:else if lobby.status === 'finished'}
+									<CheckCircle class="w-3 h-3 mr-1" />
+								{/if}
+								{lobby.status}
 							</Badge>
+							{#if lobby.is_private}
+								<Badge variant="outline" class="border-amber-500/30 text-amber-400">
+									Private
+								</Badge>
+							{/if}
+						</div>
+						{#if lobby.description}
+							<p class="text-neutral-400 text-lg leading-relaxed">{lobby.description}</p>
 						{/if}
-					</div>
-					{#if lobby.description}
-						<p class="text-neutral-400 text-lg leading-relaxed">{lobby.description}</p>
-					{/if}
-					<div class="flex items-center gap-4 mt-3 text-sm text-neutral-500">
-						<div class="flex items-center gap-1">
-							<Calendar class="w-4 h-4" />
-							Created {formatDate(lobby.created_at)}
-						</div>
-						<div class="flex items-center gap-1">
-							<Crown class="w-4 h-4" />
-							by {(lobby as LobbyWithCreator).users?.name || (lobby as LobbyWithCreator).users?.email || 'Anonymous'}
+						<div class="flex items-center gap-4 mt-3 text-sm text-neutral-500">
+							<div class="flex items-center gap-1">
+								<Calendar class="w-4 h-4" />
+								Created {formatDate(lobby.created_at)}
+							</div>
+							<div class="flex items-center gap-1">
+								<Crown class="w-4 h-4" />
+								by {(lobby as LobbyWithCreator).users?.name || (lobby as LobbyWithCreator).users?.email || 'Anonymous'}
+							</div>
 						</div>
 					</div>
-				</div>
-				
-				<div class="flex items-center gap-3">
-					<Button
-						variant="outline"
-						size="sm"
-						onclick={copyLobbyLink}
-						class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-					>
-						<Copy class="w-4 h-4 mr-2" />
-						Copy Link
-					</Button>
 					
-					{#if canJoin()}
-						<Button
-							onclick={handleJoinLobby}
-							disabled={isJoining}
-							class="bg-emerald-600 hover:bg-emerald-700"
-						>
-							<Play class="w-4 h-4 mr-2" />
-							{isJoining ? 'Joining...' : 'Join Lobby'}
-						</Button>
-					{/if}
-					
-					{#if canStart()}
-						<Button
-							onclick={handleLobbyStart}
-							class="bg-emerald-600 hover:bg-emerald-700"
-						>
-							<Play class="w-4 h-4 mr-2" />
-							Start Lobby
-						</Button>
-					{/if}
-					
-					{#if isCreator()}
+					<div class="flex items-center gap-3">
 						<Button
 							variant="outline"
 							size="sm"
-							onclick={() => showSettings = true}
+							onclick={copyLobbyLink}
 							class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-							title="Lobby Settings"
 						>
-							<Settings class="w-4 h-4 mr-2" />
-							Settings
+							<Copy class="w-4 h-4 mr-2" />
+							Copy Link
 						</Button>
-					{/if}
+						
+						{#if canJoin()}
+							<Button
+								onclick={handleJoinLobby}
+								disabled={isJoining}
+								class="bg-emerald-600 hover:bg-emerald-700"
+							>
+								<Play class="w-4 h-4 mr-2" />
+								{isJoining ? 'Joining...' : 'Join Lobby'}
+							</Button>
+						{/if}
+						
+						{#if canStart()}
+							<Button
+								onclick={handleLobbyStart}
+								class="bg-emerald-600 hover:bg-emerald-700"
+							>
+								<Play class="w-4 h-4 mr-2" />
+								Start Lobby
+							</Button>
+						{/if}
+						
+						{#if isCreator()}
+							<Button
+								variant="outline"
+								size="sm"
+								onclick={() => showSettings = true}
+								class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+								title="Lobby Settings"
+							>
+								<Settings class="w-4 h-4 mr-2" />
+								Settings
+							</Button>
+						{/if}
+					</div>
 				</div>
 			</div>
-		</div>
 
-		<!-- Stats Grid -->
-		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-			<Card class="bg-neutral-900 border-neutral-800">
-				<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle class="text-sm font-medium text-neutral-200">Participants</CardTitle>
-					<Users class="h-4 w-4 text-emerald-400" />
-				</CardHeader>
-				<CardContent>
-					<div class="text-2xl font-bold text-neutral-100">{getParticipantCount()}/{lobby.max_participants}</div>
-					<p class="text-xs text-neutral-400">
-						{lobby.max_participants - getParticipantCount()} spots remaining
-					</p>
-				</CardContent>
-			</Card>
-			
-			<Card class="bg-neutral-900 border-neutral-800">
-				<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle class="text-sm font-medium text-neutral-200">Time Limit</CardTitle>
-					<Timer class="h-4 w-4 text-amber-400" />
-				</CardHeader>
-				<CardContent>
-					<div class="text-2xl font-bold text-neutral-100">{formatTimeLimit(lobby.time_limit_minutes)}</div>
-					<p class="text-xs text-neutral-400">Per challenge</p>
-				</CardContent>
-			</Card>
-			
+			<!-- Stats Grid -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+				<Card class="bg-neutral-900 border-neutral-800">
+					<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle class="text-sm font-medium text-neutral-200">Participants</CardTitle>
+						<Users class="h-4 w-4 text-emerald-400" />
+					</CardHeader>
+					<CardContent>
+						<div class="text-2xl font-bold text-neutral-100">{getParticipantCount()}/{lobby.max_participants}</div>
+						<p class="text-xs text-neutral-400">
+							{lobby.max_participants - getParticipantCount()} spots remaining
+						</p>
+					</CardContent>
+				</Card>
+				
+				<Card class="bg-neutral-900 border-neutral-800">
+					<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle class="text-sm font-medium text-neutral-200">Time Limit</CardTitle>
+						<Timer class="h-4 w-4 text-amber-400" />
+					</CardHeader>
+					<CardContent>
+						<div class="text-2xl font-bold text-neutral-100">{formatTimeLimit(lobby.time_limit_minutes)}</div>
+						<p class="text-xs text-neutral-400">Per challenge</p>
+					</CardContent>
+				</Card>
+				
+				<Card class="bg-neutral-900 border-neutral-800">
+					<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle class="text-sm font-medium text-neutral-200">Submissions</CardTitle>
+						<Target class="h-4 w-4 text-rose-400" />
+					</CardHeader>
+					<CardContent>
+						<div class="text-2xl font-bold text-neutral-100">{submissions.length}</div>
+						<p class="text-xs text-neutral-400">Total attempts</p>
+					</CardContent>
+				</Card>
+			</div>
 
-			
-			<Card class="bg-neutral-900 border-neutral-800">
-				<CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle class="text-sm font-medium text-neutral-200">Submissions</CardTitle>
-					<Target class="h-4 w-4 text-rose-400" />
-				</CardHeader>
-				<CardContent>
-					<div class="text-2xl font-bold text-neutral-100">{submissions.length}</div>
-					<p class="text-xs text-neutral-400">Total attempts</p>
-				</CardContent>
-			</Card>
-		</div>
-
-		<!-- Main Content Tabs -->
-		<Tabs value={activeTab} onValueChange={(value: string) => activeTab = value} class="w-full">
-		<TabsList class="grid w-full {isCreator() ? 'grid-cols-5' : 'grid-cols-4'} bg-neutral-900 border border-neutral-800">
-			<TabsTrigger value="overview" class="text-neutral-300 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
-			<TabsTrigger value="participants" class="text-neutral-300 data-[state=active]:text-neutral-100">Participants</TabsTrigger>
-			<TabsTrigger value="submissions" class="text-neutral-300 data-[state=active]:text-neutral-100">Submissions</TabsTrigger>
-			{#if isCreator()}
-				<TabsTrigger value="settings" class="text-neutral-300 data-[state=active]:text-neutral-100">Settings</TabsTrigger>
-			{/if}
-			<TabsTrigger value="chat" class="text-neutral-300 data-[state=active]:text-neutral-100">Chat</TabsTrigger>
-		</TabsList>			<TabsContent value="overview" class="space-y-6">
-				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<!-- Main Content Tabs -->
+			<Tabs value={activeTab} onValueChange={(value: string) => activeTab = value} class="w-full">
+				<TabsList class="grid w-full {isCreator() ? 'grid-cols-5' : 'grid-cols-4'} bg-neutral-900 border border-neutral-800">
+					<TabsTrigger value="overview" class="text-neutral-300 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
+					<TabsTrigger value="participants" class="text-neutral-300 data-[state=active]:text-neutral-100">Participants</TabsTrigger>
+					<TabsTrigger value="submissions" class="text-neutral-300 data-[state=active]:text-neutral-100">Submissions</TabsTrigger>
+					{#if isCreator()}
+						<TabsTrigger value="settings" class="text-neutral-300 data-[state=active]:text-neutral-100">Settings</TabsTrigger>
+					{/if}
+					<TabsTrigger value="chat" class="text-neutral-300 data-[state=active]:text-neutral-100">Chat</TabsTrigger>
+				</TabsList>
+				
+				<TabsContent value="overview" class="space-y-6">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+						<Card class="bg-neutral-900 border-neutral-800">
+							<CardHeader>
+								<CardTitle class="text-neutral-100">Lobby Information</CardTitle>
+							</CardHeader>
+							<CardContent class="space-y-4">
+								<div class="flex justify-between">
+									<span class="text-neutral-400">Status:</span>
+									<Badge class={getStatusColor(lobby.status)}>{lobby.status}</Badge>
+								</div>
+								<div class="flex justify-between">
+									<span class="text-neutral-400">Created:</span>
+									<span class="text-neutral-200">{formatDate(lobby.created_at)}</span>
+								</div>
+								<div class="flex justify-between">
+									<span class="text-neutral-400">Creator:</span>
+									<span class="text-neutral-200">{(lobby as LobbyWithCreator).users?.name || (lobby as LobbyWithCreator).users?.email || 'Anonymous'}</span>
+								</div>
+								{#if lobby.start_time}
+									<div class="flex justify-between">
+										<span class="text-neutral-400">Started:</span>
+										<span class="text-neutral-200">{formatDate(lobby.start_time)}</span>
+									</div>
+								{/if}
+								{#if lobby.end_time}
+									<div class="flex justify-between">
+										<span class="text-neutral-400">Ended:</span>
+										<span class="text-neutral-200">{formatDate(lobby.end_time)}</span>
+									</div>
+								{/if}
+							</CardContent>
+						</Card>
+						
+						<Card class="bg-neutral-900 border-neutral-800">
+							<CardHeader>
+								<CardTitle class="text-neutral-100">Recent Activity</CardTitle>
+							</CardHeader>
+							<CardContent>
+								{#if submissions.length > 0}
+									<div class="space-y-3">
+										{#each submissions.slice(0, 5) as submission}
+											<div class="flex items-center justify-between py-2 border-b border-neutral-800 last:border-b-0">
+												<div class="flex items-center gap-3">
+													<div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-medium">
+														{submission.users?.name?.charAt(0) || 'U'}
+													</div>
+													<div>
+														<div class="text-sm font-medium text-neutral-200">
+															{submission.users?.name || 'Anonymous'}
+														</div>
+														<div class="text-xs text-neutral-400">
+															{submission.challenges?.title || 'Challenge'}
+														</div>
+													</div>
+												</div>
+												<div class="text-right">
+													<Badge class={submission.is_correct ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}>
+														{submission.is_correct ? 'Passed' : 'Failed'}
+													</Badge>
+													<div class="text-xs text-neutral-500 mt-1">
+														{formatDate(submission.submitted_at)}
+													</div>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<p class="text-neutral-400 text-center py-8">No submissions yet</p>
+								{/if}
+							</CardContent>
+						</Card>
+					</div>
+				</TabsContent>
+				
+				<TabsContent value="participants" class="space-y-4">
 					<Card class="bg-neutral-900 border-neutral-800">
 						<CardHeader>
-							<CardTitle class="text-neutral-100">Lobby Information</CardTitle>
+							<CardTitle class="text-neutral-100">
+								Participants ({getParticipantCount()}/{lobby.max_participants})
+							</CardTitle>
 						</CardHeader>
-						<CardContent class="space-y-4">
-							<div class="flex justify-between">
-								<span class="text-neutral-400">Status:</span>
-								<Badge class={getStatusColor(lobby.status)}>{lobby.status}</Badge>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-neutral-400">Created:</span>
-								<span class="text-neutral-200">{formatDate(lobby.created_at)}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-neutral-400">Creator:</span>
-								<span class="text-neutral-200">{(lobby as LobbyWithCreator).users?.name || (lobby as LobbyWithCreator).users?.email || 'Anonymous'}</span>
-							</div>
-							{#if lobby.start_time}
-								<div class="flex justify-between">
-									<span class="text-neutral-400">Started:</span>
-									<span class="text-neutral-200">{formatDate(lobby.start_time)}</span>
+						<CardContent>
+							{#if lobby.lobby_users && lobby.lobby_users.length > 0}
+								<div class="grid gap-3">
+									{#each lobby.lobby_users as participant, index}
+										<div class="flex items-center justify-between p-3 bg-neutral-800/50 rounded-lg">
+											<div class="flex items-center gap-3">
+												<div class="relative">
+													<div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium">
+														{participant.users.name?.charAt(0) || participant.users.email?.charAt(0) || 'U'}
+													</div>
+													{#if participant.users.id === lobby.created_by}
+														<Crown class="w-4 h-4 text-amber-400 absolute -top-1 -right-1" />
+													{/if}
+												</div>
+												<div>
+													<div class="font-medium text-neutral-100">
+														{participant.users.name || participant.users.email || 'Anonymous'}
+													</div>
+													<div class="text-sm text-neutral-400">
+														Joined {formatDate(participant.joined_at)}
+													</div>
+												</div>
+											</div>
+											<div class="flex items-center gap-2">
+												{#if participant.users.id === lobby.created_by}
+													<Badge class="bg-amber-500/20 text-amber-400 border-amber-500/30">
+														<Crown class="w-3 h-3 mr-1" />
+														Creator
+													</Badge>
+												{/if}
+												<Badge variant="outline" class="border-neutral-600 text-neutral-400">
+													#{index + 1}
+												</Badge>
+											</div>
+										</div>
+									{/each}
 								</div>
-							{/if}
-							{#if lobby.end_time}
-								<div class="flex justify-between">
-									<span class="text-neutral-400">Ended:</span>
-									<span class="text-neutral-200">{formatDate(lobby.end_time)}</span>
-								</div>
+							{:else}
+								<p class="text-neutral-400 text-center py-8">No participants yet</p>
 							{/if}
 						</CardContent>
 					</Card>
-					
+				</TabsContent>
+				
+				<TabsContent value="submissions" class="space-y-4">
 					<Card class="bg-neutral-900 border-neutral-800">
 						<CardHeader>
-							<CardTitle class="text-neutral-100">Recent Activity</CardTitle>
+							<CardTitle class="text-neutral-100">All Submissions ({submissions.length})</CardTitle>
 						</CardHeader>
 						<CardContent>
 							{#if submissions.length > 0}
 								<div class="space-y-3">
-									{#each submissions.slice(0, 5) as submission}
-										<div class="flex items-center justify-between py-2 border-b border-neutral-800 last:border-b-0">
-											<div class="flex items-center gap-3">
-												<div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-medium">
+									{#each submissions as submission}
+										<div class="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg border border-neutral-700/50">
+											<div class="flex items-center gap-4">
+												<div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium">
 													{submission.users?.name?.charAt(0) || 'U'}
 												</div>
 												<div>
-													<div class="text-sm font-medium text-neutral-200">
+													<div class="font-medium text-neutral-100">
 														{submission.users?.name || 'Anonymous'}
 													</div>
-													<div class="text-xs text-neutral-400">
-														{submission.challenges?.title || 'Challenge'}
+													<div class="text-sm text-neutral-400">
+														{submission.challenges?.title || 'Challenge'} • {submission.language}
 													</div>
 												</div>
 											</div>
-											<div class="text-right">
+											<div class="flex items-center gap-4">
+												<div class="text-right">
+													<div class="font-medium text-neutral-200">{submission.score} pts</div>
+													<div class="text-xs text-neutral-400">
+														{submission.test_cases_passed}/{submission.total_test_cases} tests
+													</div>
+												</div>
 												<Badge class={submission.is_correct ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}>
 													{submission.is_correct ? 'Passed' : 'Failed'}
 												</Badge>
-												<div class="text-xs text-neutral-500 mt-1">
+												<div class="text-xs text-neutral-500">
 													{formatDate(submission.submitted_at)}
 												</div>
 											</div>
@@ -511,200 +590,98 @@
 							{/if}
 						</CardContent>
 					</Card>
-				</div>
-			</TabsContent>
-			
-			<TabsContent value="participants" class="space-y-4">
-				<Card class="bg-neutral-900 border-neutral-800">
-					<CardHeader>
-						<CardTitle class="text-neutral-100">
-							Participants ({getParticipantCount()}/{lobby.max_participants})
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{#if lobby.lobby_users && lobby.lobby_users.length > 0}
-							<div class="grid gap-3">
-								{#each lobby.lobby_users as participant, index}
-									<div class="flex items-center justify-between p-3 bg-neutral-800/50 rounded-lg">
-										<div class="flex items-center gap-3">
-											<div class="relative">
-												<div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium">
-													{participant.users.name?.charAt(0) || participant.users.email?.charAt(0) || 'U'}
-												</div>
-												{#if participant.users.id === lobby.created_by}
-													<Crown class="w-4 h-4 text-amber-400 absolute -top-1 -right-1" />
-												{/if}
-											</div>
-											<div>
-												<div class="font-medium text-neutral-100">
-													{participant.users.name || participant.users.email || 'Anonymous'}
-												</div>
-												<div class="text-sm text-neutral-400">
-													Joined {formatDate(participant.joined_at)}
-												</div>
-											</div>
-										</div>
-										<div class="flex items-center gap-2">
-											{#if participant.users.id === lobby.created_by}
-												<Badge class="bg-amber-500/20 text-amber-400 border-amber-500/30">
-													<Crown class="w-3 h-3 mr-1" />
-													Creator
-												</Badge>
-											{/if}
-											<Badge variant="outline" class="border-neutral-600 text-neutral-400">
-												#{index + 1}
-											</Badge>
-										</div>
+				</TabsContent>
+				
+				{#if isCreator()}
+					<TabsContent value="settings" class="space-y-6">
+						<Card class="bg-neutral-900 border-neutral-800">
+							<CardHeader>
+								<CardTitle class="flex items-center gap-2 text-neutral-100">
+									<Settings class="w-5 h-5 text-blue-400" />
+									Lobby Management
+								</CardTitle>
+							</CardHeader>
+							<CardContent class="space-y-4">
+								<div class="flex flex-wrap gap-3">
+									{#if canStart()}
+										<Button
+											onclick={handleLobbyStart}
+											class="bg-emerald-600 hover:bg-emerald-700"
+										>
+											<Play class="w-4 h-4 mr-2" />
+											Start Lobby
+										</Button>
+									{/if}
+									
+									<Button
+										variant="outline"
+										onclick={() => showSettings = true}
+										class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+									>
+										<Settings class="w-4 h-4 mr-2" />
+										Edit Settings
+									</Button>
+									
+									<Button
+										variant="outline"
+										onclick={copyLobbyLink}
+										class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+									>
+										<Copy class="w-4 h-4 mr-2" />
+										Copy Invite Link
+									</Button>
+								</div>
+								
+								<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+									<div class="bg-neutral-800 p-3 rounded-lg">
+										<div class="text-sm text-neutral-400">Status</div>
+										<Badge class={getStatusColor(lobby.status)}>{lobby.status}</Badge>
 									</div>
-								{/each}
-							</div>
-						{:else}
-							<p class="text-neutral-400 text-center py-8">No participants yet</p>
-						{/if}
-					</CardContent>
-				</Card>
-			</TabsContent>
-			
-			<TabsContent value="submissions" class="space-y-4">
-				<Card class="bg-neutral-900 border-neutral-800">
-					<CardHeader>
-						<CardTitle class="text-neutral-100">All Submissions ({submissions.length})</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{#if submissions.length > 0}
-							<div class="space-y-3">
-								{#each submissions as submission}
-									<div class="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg border border-neutral-700/50">
-										<div class="flex items-center gap-4">
-											<div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium">
-												{submission.users?.name?.charAt(0) || 'U'}
-											</div>
-											<div>
-												<div class="font-medium text-neutral-100">
-													{submission.users?.name || 'Anonymous'}
-												</div>
-												<div class="text-sm text-neutral-400">
-													{submission.challenges?.title || 'Challenge'} • {submission.language}
-												</div>
-											</div>
-										</div>
-										<div class="flex items-center gap-4">
-											<div class="text-right">
-												<div class="font-medium text-neutral-200">{submission.score} pts</div>
-												<div class="text-xs text-neutral-400">
-													{submission.test_cases_passed}/{submission.total_test_cases} tests
-												</div>
-											</div>
-											<Badge class={submission.is_correct ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}>
-												{submission.is_correct ? 'Passed' : 'Failed'}
-											</Badge>
-											<div class="text-xs text-neutral-500">
-												{formatDate(submission.submitted_at)}
-											</div>
-										</div>
+									<div class="bg-neutral-800 p-3 rounded-lg">
+										<div class="text-sm text-neutral-400">Participants</div>
+										<div class="font-semibold">{getParticipantCount()}/{lobby.max_participants}</div>
 									</div>
-								{/each}
-							</div>
-						{:else}
-							<p class="text-neutral-400 text-center py-8">No submissions yet</p>
-						{/if}
-					</CardContent>
-				</Card>
-			</TabsContent>
-			
-			{#if isCreator()}
-				<TabsContent value="settings" class="space-y-6">
-					<!-- Lobby Management Section -->
+									<div class="bg-neutral-800 p-3 rounded-lg">
+										<div class="text-sm text-neutral-400">Submissions</div>
+										<div class="font-semibold">{submissions.length}</div>
+									</div>
+									<div class="bg-neutral-800 p-3 rounded-lg">
+										<div class="text-sm text-neutral-400">Time Limit</div>
+										<div class="font-semibold text-sm">{formatTimeLimit(lobby.time_limit_minutes)}</div>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+						
+						<LiveScoreDashboard lobbyId={lobby.id} isOwner={true} />
+					</TabsContent>
+				{/if}
+				
+				<TabsContent value="chat" class="space-y-4">
 					<Card class="bg-neutral-900 border-neutral-800">
 						<CardHeader>
-							<CardTitle class="flex items-center gap-2 text-neutral-100">
-								<Settings class="w-5 h-5 text-blue-400" />
-								Lobby Management
+							<CardTitle class="text-neutral-100 flex items-center gap-2">
+								<MessageCircle class="w-5 h-5" />
+								Lobby Chat
 							</CardTitle>
 						</CardHeader>
-						<CardContent class="space-y-4">
-							<div class="flex flex-wrap gap-3">
-								{#if canStart()}
-									<Button
-										onclick={handleLobbyStart}
-										class="bg-emerald-600 hover:bg-emerald-700"
-									>
-										<Play class="w-4 h-4 mr-2" />
-										Start Lobby
-									</Button>
-								{/if}
-								
-								<Button
-									variant="outline"
-									onclick={() => showSettings = true}
-									class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-								>
-									<Settings class="w-4 h-4 mr-2" />
-									Edit Settings
-								</Button>
-								
-								<Button
-									variant="outline"
-									onclick={copyLobbyLink}
-									class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-								>
-									<Copy class="w-4 h-4 mr-2" />
-									Copy Invite Link
-								</Button>
-							</div>
-							
-							<!-- Lobby Status Info -->
-							<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-								<div class="bg-neutral-800 p-3 rounded-lg">
-									<div class="text-sm text-neutral-400">Status</div>
-									<Badge class={getStatusColor(lobby.status)}>{lobby.status}</Badge>
-								</div>
-								<div class="bg-neutral-800 p-3 rounded-lg">
-									<div class="text-sm text-neutral-400">Participants</div>
-									<div class="font-semibold">{getParticipantCount()}/{lobby.max_participants}</div>
-								</div>
-								<div class="bg-neutral-800 p-3 rounded-lg">
-									<div class="text-sm text-neutral-400">Submissions</div>
-									<div class="font-semibold">{submissions.length}</div>
-								</div>
-								<div class="bg-neutral-800 p-3 rounded-lg">
-									<div class="text-sm text-neutral-400">Time Limit</div>
-									<div class="font-semibold text-sm">{formatTimeLimit(lobby.time_limit_minutes)}</div>
+						<CardContent>
+							<div class="h-96 flex items-center justify-center text-neutral-400">
+								<div class="text-center">
+									<MessageCircle class="w-12 h-12 mx-auto mb-3 opacity-50" />
+									<p>Chat feature coming soon!</p>
+									<p class="text-sm mt-1">Communicate with other participants in real-time.</p>
 								</div>
 							</div>
 						</CardContent>
 					</Card>
-					
-					<!-- Live Dashboard Section -->
-					<LiveScoreDashboard lobbyId={lobby.id} isOwner={true} />
 				</TabsContent>
-			{/if}
-			
-			<TabsContent value="chat" class="space-y-4">
-				<Card class="bg-neutral-900 border-neutral-800">
-					<CardHeader>
-						<CardTitle class="text-neutral-100 flex items-center gap-2">
-							<MessageCircle class="w-5 h-5" />
-							Lobby Chat
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div class="h-96 flex items-center justify-center text-neutral-400">
-							<div class="text-center">
-								<MessageCircle class="w-12 h-12 mx-auto mb-3 opacity-50" />
-								<p>Chat feature coming soon!</p>
-								<p class="text-sm mt-1">Communicate with other participants in real-time.</p>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-			</TabsContent>
-		</Tabs>
+			</Tabs>
+		{/if}
 	</div>
 </div>
-{/if}
 
-<!-- Lobby Settings Modal -->
+<!-- Modals -->
 <LobbySettingsModal 
 	isOpen={showSettings}
 	lobby={lobby}
@@ -714,7 +691,6 @@
 	onStart={handleLobbyStart}
 />
 
-<!-- Challenge Selection Modal -->
 <ChallengeSelectionModal 
 	isOpen={showChallengeSelection}
 	onStart={handleChallengesSelected}
