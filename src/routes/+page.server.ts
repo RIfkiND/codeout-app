@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
+import type { RequestEvent } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals }: RequestEvent) => {
 	try {
 		// Get user session
 		const { session } = await locals.safeGetSession();

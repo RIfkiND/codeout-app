@@ -1,11 +1,7 @@
-import type { PageData } from './$types';
+import type { PageLoad } from './$types';
 
-export interface PageData {
-	lobby: any;
-	activeChallenge: any;
-	submissions: any[];
-	standings: any[];
-	user: any;
-	isParticipant: boolean;
-	isOwner: boolean;
-}
+export const load: PageLoad = async () => {
+	// This file exists to define the route and can be empty since data loading
+	// is handled by +page.server.ts
+	return {};
+};

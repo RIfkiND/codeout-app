@@ -53,7 +53,8 @@ const formatTimeLimit = (minutes: number | null) => {
 const getParticipantCount = () => lobby.lobby_users?.length || 0;
 const isFull = () => getParticipantCount() >= lobby.max_participants;
 const canJoin = () => lobby.status === 'waiting' && !isFull() && !isOwner;
-const canStart = () => isOwner && ['waiting', 'selecting_challenge', 'countdown', 'running'].includes(lobby.status);
+const canStart = () => isOwner && lobby.status === 'waiting' && getParticipantCount() > 0;
+const canManage = () => isOwner; // Owners can always manage their lobby
 
 const handleJoinClick = async () => {
   if (canJoin() && onJoin && !isJoining) {
@@ -70,6 +71,36 @@ const handleJoinClick = async () => {
     }
   }
 };
+
+const handleDeleteClick = async () => {
+  if (!onDelete || !isOwner || isDeleting) return;
+  
+  if (confirm(`Are you sure you want to delete the lobby "${lobby.name}"? This action cannot be undone.`)) {
+    isDeleting = true;
+    showMenu = false;
+    try {
+      await onDelete(lobby.id);
+    } catch (error) {
+      console.error('Error deleting lobby:', error);
+    } finally {
+      isDeleting = false;
+    }
+  }
+};
+
+// Close menu when clicking outside
+$effect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    if (showMenu && !e.target?.closest?.('.relative')) {
+      showMenu = false;
+    }
+  };
+
+  if (showMenu) {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }
+});
 </script>
 
 <div class="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 rounded-xl p-6 hover:border-neutral-700 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 group">
@@ -167,16 +198,16 @@ const handleJoinClick = async () => {
         class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/25 cursor-pointer"
       >
         <Settings class="w-4 h-4" />
-        Manage Lobby
+        Start Lobby
       </a>
-    {:else if isOwner}
+    {:else if canManage()}
       <!-- Owner can always manage their lobby -->
       <a
         href="/home/lobby/{lobby.id}"
         class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25 cursor-pointer"
       >
         <Settings class="w-4 h-4" />
-        Manage Lobby
+        {lobby.status === 'running' ? 'Manage Live' : 'Manage Lobby'}
       </a>
     {:else}
       <a 
@@ -197,17 +228,54 @@ const handleJoinClick = async () => {
     {/if}
     
     {#if isOwner}
-      <button
-        onclick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          shareModalOpen = true;
-        }}
-        class="inline-flex items-center justify-center px-3 py-3 bg-blue-800 hover:bg-blue-700 border border-blue-700 hover:border-blue-600 text-blue-200 rounded-lg transition-all duration-200 cursor-pointer"
-        title="Share Lobby"
-      >
-        <Share2 class="w-4 h-4" />
-      </button>
+      <!-- 3 Dots Menu for Owners -->
+      <div class="relative">
+        <button
+          onclick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showMenu = !showMenu;
+          }}
+          class="inline-flex items-center justify-center px-3 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-neutral-200 rounded-lg transition-all duration-200 cursor-pointer"
+          title="More Options"
+        >
+          <MoreHorizontal class="w-4 h-4" />
+        </button>
+        
+        {#if showMenu}
+          <div 
+            class="absolute right-0 top-full mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-20"
+            onclick={(e) => e.stopPropagation()}
+          >
+            <div class="p-1">
+              <button
+                onclick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  showMenu = false;
+                  shareModalOpen = true;
+                }}
+                class="w-full flex items-center gap-3 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-700 rounded-md transition-colors"
+              >
+                <Share2 class="w-4 h-4" />
+                Share Lobby
+              </button>
+              <button
+                onclick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteClick();
+                }}
+                disabled={isDeleting}
+                class="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 class="w-4 h-4" />
+                {isDeleting ? 'Deleting...' : 'Delete Lobby'}
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
     {/if}
     
     <a 

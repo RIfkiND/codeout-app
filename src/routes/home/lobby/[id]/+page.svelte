@@ -18,7 +18,6 @@
 	import type { LobbyWithUsers } from '$lib/models/lobby';
 	import { showSuccess, showError } from '$lib/stores/toast';
 	import LobbySettingsModal from '$lib/components/lobby/LobbySettingsModal.svelte';
-	import LiveChallengeInterface from '$lib/components/lobby/LiveChallengeInterface.svelte';
 	import LiveScoreDashboard from '$lib/components/lobby/LiveScoreDashboard.svelte';
 	import ChallengeSelectionModal from '$lib/components/lobby/ChallengeSelectionModal.svelte';
 
@@ -229,28 +228,67 @@
 		}
 	};
 
-	// Reactive statement to redirect to challenge page if active challenge exists
+	// Reactive statement to redirect non-owners to challenge page if active challenge exists
 	$effect(() => {
-		if (lobby.status === 'running' && lobby.lobby_challenges?.length > 0) {
+		if (lobby.status === 'running' && lobby.lobby_challenges?.length > 0 && !isCreator()) {
 			const activeChallenges = lobby.lobby_challenges.filter((lc: any) => lc.status === 'active');
 			if (activeChallenges.length > 0) {
-				const activeChallenge = activeChallenges[0];
-				goto(`/home/lobby/${lobby.id}/challenge/${activeChallenge.challenges.id}`);
+				// Redirect participants to the challenge waiting room/interface
+				goto(`/home/lobby/challenge/${lobby.id}`);
 			}
 		}
 	});
 </script>
 
-<!-- Show live challenge interface when lobby is running -->
-{#if lobby.status === 'running' || lobby.status === 'selecting_challenge'}
-	<LiveChallengeInterface 
-		lobbyId={lobby.id} 
-		initialData={{
-			lobby,
-			submissions,
-			currentUserId: currentUser?.id
-		}}
-	/>
+<!-- Show live score dashboard for owners when lobby is running -->
+{#if lobby.status === 'running' && isCreator()}
+	<div class="min-h-screen bg-neutral-950 text-neutral-100">
+		<div class="max-w-7xl mx-auto p-4">
+			<!-- Header -->
+			<div class="flex items-center gap-4 mb-6">
+				<Button 
+					variant="ghost" 
+					size="sm" 
+					onclick={() => goto('/home/lobby')}
+					class="text-neutral-400 hover:text-neutral-100"
+				>
+					<ArrowLeft class="w-4 h-4 mr-2" />
+					Back to Lobbies
+				</Button>
+				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
+				<Badge class={getStatusColor(lobby.status)}>
+					<Timer class="w-3 h-3 mr-1" />
+					Live Challenge
+				</Badge>
+			</div>
+			
+			<!-- Live Score Dashboard -->
+			<LiveScoreDashboard lobbyId={lobby.id} />
+		</div>
+	</div>
+{:else if lobby.status === 'selecting_challenge' && isCreator()}
+	<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
+		<div class="max-w-7xl mx-auto">
+			<div class="flex items-center gap-4 mb-6">
+				<Button 
+					variant="ghost" 
+					size="sm" 
+					onclick={() => goto('/home/lobby')}
+					class="text-neutral-400 hover:text-neutral-100"
+				>
+					<ArrowLeft class="w-4 h-4 mr-2" />
+					Back to Lobbies
+				</Button>
+				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
+			</div>
+			
+			<div class="text-center py-12">
+				<Timer class="w-16 h-16 mx-auto mb-4 text-amber-400 animate-pulse" />
+				<h2 class="text-2xl font-bold mb-2">Select Challenge</h2>
+				<p class="text-neutral-400">Use the challenge selection modal to start a challenge</p>
+			</div>
+		</div>
+	</div>
 {:else}
 	<!-- Regular lobby interface for waiting/finished states -->
 	<div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
@@ -398,7 +436,7 @@
 			<TabsTrigger value="participants" class="text-neutral-300 data-[state=active]:text-neutral-100">Participants</TabsTrigger>
 			<TabsTrigger value="submissions" class="text-neutral-300 data-[state=active]:text-neutral-100">Submissions</TabsTrigger>
 			{#if isCreator()}
-				<TabsTrigger value="dashboard" class="text-neutral-300 data-[state=active]:text-neutral-100">Live Dashboard</TabsTrigger>
+				<TabsTrigger value="settings" class="text-neutral-300 data-[state=active]:text-neutral-100">Settings</TabsTrigger>
 			{/if}
 			<TabsTrigger value="chat" class="text-neutral-300 data-[state=active]:text-neutral-100">Chat</TabsTrigger>
 		</TabsList>			<TabsContent value="overview" class="space-y-6">
@@ -575,7 +613,69 @@
 			</TabsContent>
 			
 			{#if isCreator()}
-				<TabsContent value="dashboard" class="space-y-6">
+				<TabsContent value="settings" class="space-y-6">
+					<!-- Lobby Management Section -->
+					<Card class="bg-neutral-900 border-neutral-800">
+						<CardHeader>
+							<CardTitle class="flex items-center gap-2 text-neutral-100">
+								<Settings class="w-5 h-5 text-blue-400" />
+								Lobby Management
+							</CardTitle>
+						</CardHeader>
+						<CardContent class="space-y-4">
+							<div class="flex flex-wrap gap-3">
+								{#if canStart()}
+									<Button
+										onclick={handleLobbyStart}
+										class="bg-emerald-600 hover:bg-emerald-700"
+									>
+										<Play class="w-4 h-4 mr-2" />
+										Start Lobby
+									</Button>
+								{/if}
+								
+								<Button
+									variant="outline"
+									onclick={() => showSettings = true}
+									class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+								>
+									<Settings class="w-4 h-4 mr-2" />
+									Edit Settings
+								</Button>
+								
+								<Button
+									variant="outline"
+									onclick={copyLobbyLink}
+									class="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+								>
+									<Copy class="w-4 h-4 mr-2" />
+									Copy Invite Link
+								</Button>
+							</div>
+							
+							<!-- Lobby Status Info -->
+							<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+								<div class="bg-neutral-800 p-3 rounded-lg">
+									<div class="text-sm text-neutral-400">Status</div>
+									<Badge class={getStatusColor(lobby.status)}>{lobby.status}</Badge>
+								</div>
+								<div class="bg-neutral-800 p-3 rounded-lg">
+									<div class="text-sm text-neutral-400">Participants</div>
+									<div class="font-semibold">{getParticipantCount()}/{lobby.max_participants}</div>
+								</div>
+								<div class="bg-neutral-800 p-3 rounded-lg">
+									<div class="text-sm text-neutral-400">Submissions</div>
+									<div class="font-semibold">{submissions.length}</div>
+								</div>
+								<div class="bg-neutral-800 p-3 rounded-lg">
+									<div class="text-sm text-neutral-400">Time Limit</div>
+									<div class="font-semibold text-sm">{formatTimeLimit(lobby.time_limit_minutes)}</div>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+					
+					<!-- Live Dashboard Section -->
 					<LiveScoreDashboard lobbyId={lobby.id} isOwner={true} />
 				</TabsContent>
 			{/if}
