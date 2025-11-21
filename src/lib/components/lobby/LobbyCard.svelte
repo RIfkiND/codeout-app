@@ -91,7 +91,7 @@ const handleDeleteClick = async () => {
 // Close menu when clicking outside
 $effect(() => {
   const handleClickOutside = (e: MouseEvent) => {
-    if (showMenu && !e.target?.closest?.('.relative')) {
+    if (showMenu && !(e.target as Element)?.closest?.('.relative')) {
       showMenu = false;
     }
   };
@@ -245,7 +245,14 @@ $effect(() => {
         {#if showMenu}
           <div 
             class="absolute right-0 top-full mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-20"
+            role="menu"
+            tabindex="-1"
             onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => {
+              if (e.key === 'Escape') {
+                showMenu = false;
+              }
+            }}
           >
             <div class="p-1">
               <button

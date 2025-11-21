@@ -6,13 +6,12 @@ interface LobbyStandingWithUser {
 	user_id: string;
 	total_score: number;
 	challenges_completed: number;
-	fastest_time: number | null;
-	last_updated: string;
+	average_completion_time_ms: number | null;
+	updated_at: string;
 	users: {
 		id: string;
 		name: string | null;
 		email: string | null;
-		avatar_url: string | null;
 	} | null;
 }
 
@@ -20,9 +19,9 @@ interface SubmissionWithUserAndChallenge {
 	id: string;
 	user_id: string;
 	score: number;
-	is_correct: boolean;
-	execution_time: number | null;
-	submitted_at: string;
+	is_completed: boolean;
+	completion_time_ms: number | null;
+	created_at: string;
 	users: {
 		name: string | null;
 		email: string | null;
@@ -66,13 +65,12 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 				user_id,
 				total_score,
 				challenges_completed,
-				fastest_time,
-				last_updated,
+				average_completion_time_ms,
+				updated_at,
 				users (
 					id,
 					name,
-					email,
-					avatar_url
+					email
 				)
 			`)
 			.eq('lobby_id', lobbyId)
@@ -88,11 +86,11 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 		const scores = (typedScoresData || []).map((score, index) => ({
 			user_id: score.user_id,
 			username: score.users?.name || score.users?.email || 'Anonymous',
-			avatar_url: score.users?.avatar_url,
+			avatar_url: null, // Temporarily disabled due to schema issues
 			total_score: score.total_score,
 			challenges_completed: score.challenges_completed,
-			fastest_time: score.fastest_time,
-			latest_submission: score.last_updated,
+			average_time: score.average_completion_time_ms,
+			latest_submission: score.updated_at,
 			rank: index + 1
 		}));
 
@@ -103,9 +101,9 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 				id,
 				user_id,
 				score,
-				is_correct,
-				execution_time,
-				submitted_at,
+				is_completed,
+				completion_time_ms,
+				created_at,
 				users (
 					name,
 					email
@@ -115,7 +113,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 				)
 			`)
 			.eq('lobby_id', lobbyId)
-			.order('submitted_at', { ascending: false })
+			.order('created_at', { ascending: false })
 			.limit(20);
 
 		if (submissionsError) {
@@ -131,9 +129,9 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 			username: submission.users?.name || submission.users?.email || 'Anonymous',
 			challenge_title: submission.challenges?.title || 'Challenge',
 			score: submission.score,
-			is_correct: submission.is_correct,
-			submitted_at: submission.submitted_at,
-			execution_time: submission.execution_time || 0
+			is_correct: submission.is_completed,
+			submitted_at: submission.created_at,
+			execution_time: submission.completion_time_ms || 0
 		}));
 
 		return json({

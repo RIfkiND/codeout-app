@@ -8,7 +8,7 @@
 	import { 
 		Users, Clock, Trophy, Play, MessageCircle, Crown, 
 		ArrowLeft, Settings, Copy, ExternalLink, User,
-		Timer, Calendar, Target, Award, Zap, CheckCircle, X
+		Timer, Calendar, Target, Award, Zap, CheckCircle, X, Square
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -106,8 +106,8 @@
 
 	const getParticipantCount = () => lobby.lobby_users?.length || 0;
 	const isCreator = () => lobby.created_by === currentUser?.id;
-	const isParticipant = () => lobby.lobby_users?.some(lu => lu.users.id === currentUser?.id);
-	const canJoin = () => lobby.status === 'waiting' && getParticipantCount() < lobby.max_participants && !isParticipant();
+	const isParticipant = () => lobby.lobby_users?.some(lu => lu.users?.id === currentUser?.id) || false;
+	const canJoin = () => currentUser && lobby.status === 'waiting' && getParticipantCount() < lobby.max_participants && !isParticipant();
 	const canStart = () => lobby.status === 'waiting' && isCreator() && getParticipantCount() > 0;
 
 	const handleJoinLobby = async () => {
@@ -238,6 +238,44 @@
 		}
 	};
 
+	const handleLobbyCancel = async () => {
+		// Show confirmation dialog
+		const confirmed = confirm(
+			'Are you sure you want to cancel this live challenge?\n\n' +
+			'This will:\n' +
+			'• Stop the current challenge for all participants\n' +
+			'• Reset the lobby to waiting state\n' +
+			'• Clear all current progress\n\n' +
+			'This action cannot be undone.'
+		);
+
+		if (!confirmed) return;
+
+		try {
+			const response = await fetch(`/api/lobbies/${lobby.id}/cancel`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' }
+			});
+			
+			if (response.ok) {
+				await invalidateAll();
+				// Update local lobby data
+				const updatedResponse = await fetch(`/api/lobbies/${lobby.id}`);
+				if (updatedResponse.ok) {
+					const updatedData = await updatedResponse.json();
+					lobby = updatedData.lobby;
+					showSuccess('Lobby Cancelled', 'The lobby challenge has been stopped and reset to waiting.');
+				}
+			} else {
+				const errorData = await response.json();
+				showError('Cancel Failed', errorData.error || 'Failed to cancel lobby');
+			}
+		} catch (error) {
+			console.error('Failed to cancel lobby:', error);
+			showError('Cancel Failed', 'An unexpected error occurred while cancelling the lobby');
+		}
+	};
+
 	// Reactive statement to redirect non-owners to challenge page if active challenge exists
 	$effect(() => {
 		if (lobby.status === 'running' && lobby.lobby_challenges && lobby.lobby_challenges.length > 0 && !isCreator()) {
@@ -251,6 +289,7 @@
 </script>
 
 <div class="min-h-screen bg-neutral-950 text-neutral-100 p-4">
+	{#if lobby}
 	<div class="max-w-7xl mx-auto">
 		<!-- Global Header -->
 		<div class="flex items-center gap-4 mb-6">
@@ -263,13 +302,22 @@
 				<ArrowLeft class="w-4 h-4 mr-2" />
 				Back to Lobbies
 			</Button>
-			{#if lobby.status === 'running' && isCreator()}
-				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
-				<Badge class={getStatusColor(lobby.status)}>
-					<Timer class="w-3 h-3 mr-1" />
-					Live Challenge
-				</Badge>
-			{:else if lobby.status === 'selecting_challenge' && isCreator()}
+		{#if lobby.status === 'running' && isCreator()}
+			<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
+			<Badge class={getStatusColor(lobby.status)}>
+				<Timer class="w-3 h-3 mr-1" />
+				Live Challenge
+			</Badge>
+			<Button
+				variant="destructive"
+				size="sm"
+				onclick={handleLobbyCancel}
+				class="ml-auto bg-rose-600 hover:bg-rose-700"
+			>
+				<Square class="w-4 h-4 mr-2" />
+				Cancel Challenge
+			</Button>
+		{:else if lobby.status === 'selecting_challenge' && isCreator()}
 				<h1 class="text-2xl font-bold">Managing: {lobby.name}</h1>
 			{/if}
 		</div>
@@ -332,7 +380,7 @@
 							Copy Link
 						</Button>
 						
-						{#if canJoin()}
+						{#if currentUser && canJoin()}
 							<Button
 								onclick={handleJoinLobby}
 								disabled={isJoining}
@@ -502,22 +550,22 @@
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{#if lobby.lobby_users && lobby.lobby_users.length > 0}
+							{#if lobby?.lobby_users && lobby.lobby_users.length > 0}
 								<div class="grid gap-3">
-									{#each lobby.lobby_users as participant, index}
+									{#each lobby.lobby_users.filter(p => p && p.users) as participant, index}
 										<div class="flex items-center justify-between p-3 bg-neutral-800/50 rounded-lg">
 											<div class="flex items-center gap-3">
 												<div class="relative">
 													<div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium">
-														{participant.users.name?.charAt(0) || participant.users.email?.charAt(0) || 'U'}
+														{participant.users?.name?.charAt(0) || participant.users?.email?.charAt(0) || 'U'}
 													</div>
-													{#if participant.users.id === lobby.created_by}
+													{#if participant.users?.id === lobby.created_by}
 														<Crown class="w-4 h-4 text-amber-400 absolute -top-1 -right-1" />
 													{/if}
 												</div>
 												<div>
 													<div class="font-medium text-neutral-100">
-														{participant.users.name || participant.users.email || 'Anonymous'}
+														{participant.users?.name || participant.users?.email || 'Anonymous'}
 													</div>
 													<div class="text-sm text-neutral-400">
 														Joined {formatDate(participant.joined_at)}
@@ -525,7 +573,7 @@
 												</div>
 											</div>
 											<div class="flex items-center gap-2">
-												{#if participant.users.id === lobby.created_by}
+												{#if participant.users?.id === lobby.created_by}
 													<Badge class="bg-amber-500/20 text-amber-400 border-amber-500/30">
 														<Crown class="w-3 h-3 mr-1" />
 														Creator
@@ -679,6 +727,11 @@
 			</Tabs>
 		{/if}
 	</div>
+	{:else}
+		<div class="flex items-center justify-center min-h-[50vh]">
+			<p class="text-neutral-400">Loading lobby...</p>
+		</div>
+	{/if}
 </div>
 
 <!-- Modals -->

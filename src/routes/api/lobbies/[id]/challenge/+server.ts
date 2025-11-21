@@ -1,13 +1,39 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-// Type definition for lobby challenge
+// Type definitions for lobby challenge and submissions
 interface LobbyChallenge {
 	id: string;
 	lobby_id: string;
 	challenge_id: string;
 	challenge_order: number;
 	status: string;
+	created_at: string;
+	updated_at: string;
+}
+
+interface Submission {
+	id: string;
+	user_id: string;
+	challenge_id: string;
+	lobby_id: string;
+	language: string;
+	code: string;
+	execution_time: number;
+	test_results: unknown[];
+	score: number;
+	is_completed: boolean;
+	test_cases_passed: number;
+	total_test_cases: number;
+	submitted_at: string;
+}
+
+interface LobbyStanding {
+	id: string;
+	lobby_id: string;
+	user_id: string;
+	total_score: number;
+	challenges_completed: number;
 	created_at: string;
 	updated_at: string;
 }
@@ -116,7 +142,11 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		}
 
 		const lobbyId = params.id;
-		const { challengeId, code, language, executionTime, score, testResults } = await request.json();
+		const { challengeId, code, language, executionTime, score, testResults, isCorrect } = await request.json();
+
+		if (!challengeId || !code || !language || score === undefined) {
+			return json({ error: 'Missing required fields' }, { status: 400 });
+		}
 
 		// Verify user is in the lobby
 		const { data: membership } = await locals.supabase
@@ -141,23 +171,25 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
 		const lobbyChallenge = lobbyChallengeData as LobbyChallenge | null;
 		if (lobbyChallengeError || !lobbyChallenge) {
-			return json({ error: 'This challenge is not currently active' }, { status: 400 });
+			return json({ error: 'This challenge is not currently active in this lobby' }, { status: 400 });
 		}
 
 		// Create submission record first
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const { data: submission, error: submissionError } = await (locals.supabase as any)
+		const { data: submission, error: submissionError } = await locals.supabase
 			.from('submissions')
+			// @ts-expect-error Supabase generated types have issues with inserts
 			.insert({
 				user_id: user.id,
 				challenge_id: challengeId,
+				lobby_id: lobbyId,
 				language,
 				code,
-				execution_time: executionTime,
-				test_results: testResults,
-				score,
-				is_correct: score >= 100,
-				status: 'completed',
+				execution_time: executionTime || 0,
+				test_results: testResults || [],
+				score: Math.min(100, Math.max(0, score)),
+				is_correct: isCorrect || false,
+				test_cases_passed: testResults?.filter((t: { passed: boolean }) => t.passed).length || 0,
+				total_test_cases: testResults?.length || 0,
 				submitted_at: new Date().toISOString()
 			})
 			.select()
@@ -169,18 +201,18 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		}
 
 		// Create lobby challenge submission
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const { data: lobbySubmission, error: lobbySubmissionError } = await (locals.supabase as any)
+		const { data: lobbySubmission, error: lobbySubmissionError } = await locals.supabase
 			.from('lobby_challenge_submissions')
+			// @ts-expect-error Supabase generated types have issues with inserts
 			.insert({
 				lobby_id: lobbyId,
 				challenge_id: challengeId,
 				user_id: user.id,
-				submission_id: submission.id,
+				submission_id: (submission as Submission)?.id,
 				challenge_order: lobbyChallenge.challenge_order,
-				completion_time_ms: executionTime,
-				score,
-				is_completed: score >= 100
+				completion_time_ms: executionTime || 0,
+				score: Math.min(100, Math.max(0, score)),
+				is_completed: isCorrect || false
 			})
 			.select()
 			.single();
@@ -190,10 +222,46 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			return json({ error: 'Failed to record lobby submission' }, { status: 500 });
 		}
 
+		// Update or create lobby standings
+		const { data: existingStanding } = await locals.supabase
+			.from('lobby_standings')
+			.select('*')
+			.eq('lobby_id', lobbyId)
+			.eq('user_id', user.id)
+			.single();
+
+		if (existingStanding) {
+			// Update existing standing
+			const newTotalScore = (existingStanding as LobbyStanding).total_score + score;
+			const newChallengesCompleted = isCorrect ? (existingStanding as LobbyStanding).challenges_completed + 1 : (existingStanding as LobbyStanding).challenges_completed;
+			
+			await locals.supabase
+				.from('lobby_standings')
+				// @ts-expect-error Supabase generated types have issues with dynamic updates
+				.update({
+					total_score: newTotalScore,
+					challenges_completed: newChallengesCompleted,
+					updated_at: new Date().toISOString()
+				})
+				.eq('id', (existingStanding as LobbyStanding).id);
+		} else {
+			// Create new standing
+			await locals.supabase
+				.from('lobby_standings')
+				// @ts-expect-error Supabase generated types have issues with inserts
+				.insert({
+					lobby_id: lobbyId,
+					user_id: user.id,
+					total_score: score,
+					challenges_completed: isCorrect ? 1 : 0
+				});
+		}
+
 		return json({
 			success: true,
 			submission,
 			lobbySubmission,
+			score,
 			message: 'Submission recorded successfully'
 		});
 

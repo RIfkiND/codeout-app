@@ -61,16 +61,15 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 
 		// Update challenge status to active
 		const updateData = { 
-			status: 'active',
+			status: 'active' as const,
 			started_at: new Date().toISOString()
 		};
 
-		const updateQuery = locals.supabase
+		const { error: updateError } = await locals.supabase
 			.from('lobby_challenges')
+			// @ts-expect-error Supabase generated types have issues with dynamic updates
 			.update(updateData)
 			.eq('id', lobbyChallenge.id);
-
-		const { error: updateError } = await updateQuery;
 
 		if (updateError) {
 			console.error('Failed to start challenge:', updateError);
@@ -80,16 +79,20 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 		// Update lobby status if needed
 		if (lobby.status === 'waiting') {
 			const lobbyUpdateData = { 
-				status: 'running',
+				status: 'running' as const,
 				start_time: new Date().toISOString()
 			};
 
-			const lobbyUpdateQuery = locals.supabase
+			const { error: lobbyUpdateError } = await locals.supabase
 				.from('lobbies')
+				// @ts-expect-error Supabase generated types have issues with dynamic updates
 				.update(lobbyUpdateData)
 				.eq('id', lobbyId);
 
-			await lobbyUpdateQuery;
+			if (lobbyUpdateError) {
+				console.error('Failed to update lobby status:', lobbyUpdateError);
+				// Don't fail the request if lobby status update fails
+			}
 		}
 
 		return json({ 

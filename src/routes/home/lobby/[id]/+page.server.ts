@@ -2,7 +2,8 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 
 export const load = (async ({ params, locals }) => {
-	const { session } = await locals.safeGetSession();
+	// Use getUser instead of getSession for better security
+	const { data: { user } } = await locals.supabase.auth.getUser();
 
 	// Get lobby details with participants
 	const { data: lobby, error: lobbyError } = await locals.supabase
@@ -46,7 +47,6 @@ export const load = (async ({ params, locals }) => {
 	return {
 		lobby,
 		submissions,
-		session,
-		user: session?.user || null
+		user
 	};
 }) satisfies PageServerLoad;

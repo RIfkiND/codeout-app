@@ -77,9 +77,10 @@
 				<!-- Share Code -->
 				<div class="space-y-4">
 					<div>
-						<label class="block text-sm font-medium mb-2">Lobby Code</label>
+						<label for="lobby-code-input" class="block text-sm font-medium mb-2">Lobby Code</label>
 						<div class="flex items-center gap-2">
 							<Input
+								id="lobby-code-input"
 								value={lobby.lobby_code}
 								readonly
 								class="text-center text-xl font-mono tracking-widest bg-neutral-800 border-neutral-700 cursor-text"
@@ -100,9 +101,10 @@
 
 					<!-- Share URL -->
 					<div>
-						<label class="block text-sm font-medium mb-2">Direct Link</label>
+						<label for="share-url-input" class="block text-sm font-medium mb-2">Direct Link</label>
 						<div class="flex items-center gap-2">
 							<Input
+								id="share-url-input"
 								value={shareUrl}
 								readonly
 								class="text-sm bg-neutral-800 border-neutral-700 cursor-text"

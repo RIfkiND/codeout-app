@@ -12,10 +12,55 @@
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { showSuccess, showError } from '$lib/stores/toast';
 	import Editor from '$lib/components/Editor/Editor.svelte';
-	import type { PageData } from './$types';
+
+	interface Challenge {
+		id: string;
+		title: string;
+		description: string;
+		difficulty: string;
+		time_limit: number | null;
+		testcases: unknown;
+		input_example: string | null;
+		output_example: string | null;
+	}
+
+	interface LobbyChallenge {
+		id: string;
+		challenge_id: string;
+		challenge_order: number;
+		status: string;
+		started_at: string | null;
+		challenges: Challenge;
+	}
+
+	interface Lobby {
+		id: string;
+		name: string;
+		description: string | null;
+		status: string;
+		max_participants: number;
+		is_private: boolean;
+		created_at: string;
+		time_limit_minutes: number | null;
+		created_by: string;
+		end_time: string | null;
+		lobby_users: any[] | null;
+		lobby_challenges: LobbyChallenge[] | null;
+	}
+
+	interface ChallengePageData {
+		lobby: Lobby;
+		activeChallenge: LobbyChallenge | undefined;
+		submissions: any[];
+		standings: any[];
+		user: any;
+		isParticipant: boolean;
+		isOwner: boolean;
+		session: any;
+	}
 
 	interface Props {
-		data: PageData;
+		data: ChallengePageData;
 	}
 
 	let { data }: Props = $props();
@@ -68,14 +113,13 @@
 		testResults = null;
 		
 		try {
-			const response = await fetch('/api/code/execute', {
+			const response = await fetch('/api/code/test', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					language: selectedLanguage,
 					code,
-					challengeId: currentChallenge.id,
-					lobbyId: lobbyData.id
+					challengeId: currentChallenge.id
 				})
 			});
 
@@ -119,29 +163,57 @@
 		isSubmitting = true;
 		
 		try {
-			const response = await fetch(`/api/lobbies/${lobbyData.id}/challenge`, {
+			// First execute the code to get test results
+			const executeResponse = await fetch('/api/code/execute', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					language: selectedLanguage,
+					code,
+					challengeId: currentChallenge.id,
+					lobbyId: lobbyData.id
+				})
+			});
+
+			if (!executeResponse.ok) {
+				const error = await executeResponse.json();
+				throw new Error(error.error || 'Failed to execute code');
+			}
+
+			const executeResult = await executeResponse.json();
+			
+			// Then submit to lobby with the execution results
+			const submitResponse = await fetch(`/api/lobbies/${lobbyData.id}/challenge`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					challengeId: currentChallenge.id,
 					language: selectedLanguage,
-					code
+					code,
+					executionTime: executeResult.executionTime || 0,
+					score: executeResult.allTestsPassed ? 100 : Math.round((executeResult.passedCount / executeResult.totalCount) * 100),
+					testResults: executeResult.testResults,
+					isCorrect: executeResult.allTestsPassed
 				})
 			});
 
-			if (response.ok) {
-				const result = await response.json();
-				showSuccess('Solution Submitted!', `Score: ${result.score}%`);
+			if (submitResponse.ok) {
+				const result = await submitResponse.json();
+				const score = executeResult.allTestsPassed ? 100 : Math.round((executeResult.passedCount / executeResult.totalCount) * 100);
+				showSuccess('Solution Submitted!', `Score: ${score}% (${executeResult.passedCount}/${executeResult.totalCount} tests passed)`);
 				
-				// Refresh submissions and standings
+				// Update test results display
+				testResults = executeResult;
+				
+				// Refresh lobby data
 				await fetchLobbyData();
 			} else {
-				const error = await response.json();
+				const error = await submitResponse.json();
 				showError('Submission Failed', error.error || 'Failed to submit solution');
 			}
 		} catch (error) {
 			console.error('Submission failed:', error);
-			showError('Submission Error', 'Failed to submit solution');
+			showError('Submission Error', error instanceof Error ? error.message : 'Failed to submit solution');
 		} finally {
 			isSubmitting = false;
 		}

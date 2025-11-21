@@ -1,7 +1,12 @@
-import type { PageServerLoad } from './$types';
+import type { ServerLoad } from '@sveltejs/kit';
 
-export const load = (async ({ params, locals }) => {
-	const { id: lobbyId, challengeId } = params;
+export const load: ServerLoad = async ({ params, locals }) => {
+	const lobbyId = params.id;
+	const challengeId = params.challengeId;
+
+	if (!lobbyId || !challengeId) {
+		throw new Error('Missing lobby ID or challenge ID');
+	}
 
 	try {
 		// Get authenticated user
@@ -100,4 +105,4 @@ export const load = (async ({ params, locals }) => {
 		console.error('Challenge page load error:', error);
 		throw new Error('Failed to load challenge data');
 	}
-}) satisfies PageServerLoad;
+};

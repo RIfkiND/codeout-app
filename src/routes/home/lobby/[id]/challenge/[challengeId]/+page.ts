@@ -1,6 +1,4 @@
-import type { PageServerLoad } from './$types';
-
-export const load = (async ({ params, parent, url }) => {
+export async function load({ params, parent }) {
 	const data = await parent();
 	
 	return {
@@ -8,4 +6,4 @@ export const load = (async ({ params, parent, url }) => {
 		lobbyId: params.id,
 		...data
 	};
-}) satisfies PageServerLoad;
+}

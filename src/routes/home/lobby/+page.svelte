@@ -279,5 +279,4 @@
 <JoinLobbyModal
 	isOpen={showJoinModal}
 	onClose={() => (showJoinModal = false)}
-	userId={data.user?.id || ''}
 />
