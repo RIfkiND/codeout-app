@@ -1,17 +1,27 @@
 <script lang="ts">
 	import Editor from './Editor.svelte';
 	import LanguageSelector from './LanguageSelector.svelte';
-	import { Play } from 'lucide-svelte';
+	import { Play, Loader2 } from 'lucide-svelte';
 
 	interface CodeEditorProps {
 		initialCode?: string;
+		challengeId?: string;
+		lobbyId?: string;
+		onExecute?: (result: any) => void;
 	}
 
-	let { initialCode = '' }: CodeEditorProps = $props();
+	let { 
+		initialCode = '', 
+		challengeId,
+		lobbyId,
+		onExecute
+	}: CodeEditorProps = $props();
 
 	let editor: Editor;
 	let code = $state(initialCode);
 	let language = $state('javascript');
+	let isExecuting = $state(false);
+	let lastResult = $state<any>(null);
 
 	async function handleLanguageChange(newLanguage: string) {
 		language = newLanguage;
@@ -23,13 +33,57 @@
 		code = value;
 	}
 
-	function runCode() {
-		// Emit event or call API
-		console.log('Running code:', { language, code });
+	async function runCode() {
+		if (!challengeId || isExecuting) return;
+		
+		isExecuting = true;
+		lastResult = null;
+		
+		try {
+			const response = await fetch('/api/code/execute', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					language,
+					code,
+					challengeId,
+					lobbyId
+				})
+			});
+			
+			if (response.ok) {
+				const result = await response.json();
+				lastResult = result;
+				onExecute?.(result);
+			} else {
+				const error = await response.json();
+				lastResult = {
+					success: false,
+					error: error.error || 'Failed to execute code',
+					output: '',
+					testResults: []
+				};
+				onExecute?.(lastResult);
+			}
+		} catch (error) {
+			console.error('Failed to execute code:', error);
+			lastResult = {
+				success: false,
+				error: 'Network error occurred',
+				output: '',
+				testResults: []
+			};
+			onExecute?.(lastResult);
+		} finally {
+			isExecuting = false;
+		}
 	}
 
 	function resetCode() {
 		editor?.loadTemplate();
+		lastResult = null;
 	}
 
 	// Public API
@@ -39,6 +93,7 @@
 		code = newCode;
 		editor?.setValue(newCode);
 	}
+	export function getLastResult() { return lastResult; }
 </script>
 
 <div class="flex flex-col gap-4 p-4 bg-neutral-900 rounded-lg border border-neutral-700">
@@ -53,15 +108,22 @@
 			<button 
 				onclick={resetCode}
 				class="px-3 py-1.5 text-sm border border-neutral-600 bg-neutral-800 text-neutral-200 rounded-md hover:bg-neutral-700 transition-colors"
+				disabled={isExecuting}
 			>
 				Reset
 			</button>
 			<button 
 				onclick={runCode}
-				class="px-4 py-1.5 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors flex items-center gap-2"
+				disabled={!challengeId || isExecuting}
+				class="px-4 py-1.5 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 			>
-				<Play class="w-4 h-4" />
-				Run
+				{#if isExecuting}
+					<Loader2 class="w-4 h-4 animate-spin" />
+					Running...
+				{:else}
+					<Play class="w-4 h-4" />
+					Run Tests
+				{/if}
 			</button>
 		</div>
 	</div>
@@ -81,4 +143,57 @@
 		<span>Chars: {code.length}</span>
 		<span>Lang: {language.toUpperCase()}</span>
 	</div>
+	
+	<!-- Test Results -->
+	{#if lastResult}
+		<div class="mt-4 p-4 bg-neutral-800 rounded-lg border border-neutral-600">
+			<h4 class="font-semibold mb-2 text-neutral-100">Test Results</h4>
+			
+			{#if lastResult.success}
+				<div class="flex items-center gap-2 mb-3">
+					<div class="w-3 h-3 rounded-full {lastResult.allTestsPassed ? 'bg-emerald-500' : 'bg-yellow-500'}"></div>
+					<span class="text-sm font-medium {lastResult.allTestsPassed ? 'text-emerald-400' : 'text-yellow-400'}">
+						{lastResult.passedCount}/{lastResult.totalCount} tests passed
+					</span>
+					{#if lastResult.executionTime}
+						<span class="text-xs text-neutral-400 ml-auto">
+							{lastResult.executionTime}ms
+						</span>
+					{/if}
+				</div>
+				
+				{#if lastResult.testResults && lastResult.testResults.length > 0}
+					<div class="space-y-2">
+						{#each lastResult.testResults as testCase, i}
+							<div class="flex items-start gap-3 p-2 bg-neutral-700 rounded text-xs">
+								<div class="w-2 h-2 rounded-full mt-1.5 {testCase.passed ? 'bg-emerald-500' : 'bg-rose-500'}"></div>
+								<div class="flex-1">
+									<div class="font-medium text-neutral-200">Test {i + 1}</div>
+									{#if !testCase.passed}
+										<div class="text-rose-400 mt-1">
+											Expected: {testCase.expected}
+										</div>
+										<div class="text-rose-400">
+											Got: {testCase.actual}
+										</div>
+									{/if}
+									{#if testCase.time}
+										<div class="text-neutral-500 mt-1">{testCase.time}</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			{:else}
+				<div class="flex items-center gap-2 mb-2">
+					<div class="w-3 h-3 rounded-full bg-rose-500"></div>
+					<span class="text-sm font-medium text-rose-400">Execution Failed</span>
+				</div>
+				<div class="text-sm text-rose-300 bg-rose-500/10 p-2 rounded">
+					{lastResult.error}
+				</div>
+			{/if}
+		</div>
+	{/if}
 </div>

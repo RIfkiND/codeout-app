@@ -10,9 +10,6 @@ interface TestCaseInput {
 
 export const GET: RequestHandler = async ({ locals, url }) => {
 	try {
-		// Get authenticated user (optional for viewing lobbies)
-		const { data: { user } } = await locals.supabase.auth.getUser();
-
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '20');
 		const status = url.searchParams.get('status') as 'waiting' | 'running' | 'finished' | null;
@@ -26,6 +23,14 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				creator:users!lobbies_created_by_fkey (
 					id,
 					name
+				),
+				lobby_users (
+					joined_at,
+					users (
+						id,
+						name,
+						email
+					)
 				),
 				current_challenge:challenges!lobbies_challenge_id_fkey (
 					id,
@@ -282,21 +287,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// SUCCESS: Lobby created successfully
-		// Try to add creator to lobby_users (will work after RLS fix)
-		try {
-			const { error: creatorError } = await locals.supabase.rpc('add_lobby_creator', {
-				p_lobby_id: lobbyId,
-				p_user_id: user.id
-			});
-			
-			if (creatorError) {
-				console.warn('Could not add creator to lobby_users:', creatorError.message);
-				// Don't fail the entire operation - lobby is still created
-			}
-		} catch (creatorErr) {
-			console.warn('Creator addition failed (RLS issue):', creatorErr);
-		}
-		
 		console.log(`Lobby ${lobbyId} created successfully by user ${user.id}`);
 
 		return json({ 
@@ -307,6 +297,65 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		console.error('Lobby creation API error:', error);
 		return json({
 			error: error instanceof Error ? error.message : 'Failed to create lobby'
+		}, { status: 500 });
+	}
+};
+
+export const DELETE: RequestHandler = async ({ request, locals }) => {
+	try {
+		const { data: { user }, error: authError } = await locals.supabase.auth.getUser();
+		if (authError || !user) {
+			return json({ error: 'Authentication required' }, { status: 401 });
+		}
+
+		const { lobbyId } = await request.json();
+
+		if (!lobbyId) {
+			return json({ error: 'Lobby ID is required' }, { status: 400 });
+		}
+
+		// Check if user is the lobby creator
+		const { data: lobbyData, error: lobbyError } = await locals.supabase
+			.from('lobbies')
+			.select('id, created_by, name')
+			.eq('id', lobbyId)
+			.single();
+
+		const lobby = lobbyData as { id: string; created_by: string; name: string } | null;
+
+		if (lobbyError || !lobby) {
+			return json({ error: 'Lobby not found' }, { status: 404 });
+		}
+
+		if (lobby.created_by !== user.id) {
+			return json({ error: 'Only the lobby creator can delete this lobby' }, { status: 403 });
+		}
+
+		// Delete the lobby (CASCADE should handle related data)
+		const { error: deleteError } = await locals.supabase
+			.from('lobbies')
+			.delete()
+			.eq('id', lobbyId)
+			.eq('created_by', user.id); // Double check ownership
+
+		if (deleteError) {
+			console.error('Lobby deletion error:', deleteError);
+			return json({ error: 'Failed to delete lobby' }, { status: 500 });
+		}
+
+		console.log(`Lobby ${lobbyId} (${lobby.name}) deleted by user ${user.id}`);
+
+		return json({ 
+			message: 'Lobby deleted successfully',
+			deletedLobby: {
+				id: lobbyId,
+				name: lobby.name
+			}
+		});
+	} catch (error) {
+		console.error('Lobby deletion API error:', error);
+		return json({
+			error: error instanceof Error ? error.message : 'Failed to delete lobby'
 		}, { status: 500 });
 	}
 };

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ params, locals }) => {
+export const POST: RequestHandler = async ({ params, request, locals }) => {
 	try {
 		// Use more reliable authentication method
 		const { data: { user }, error: authError } = await locals.supabase.auth.getUser();
@@ -10,6 +10,8 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 		}
 
 		const lobbyId = params.id;
+		const requestData = await request.json();
+		const { challengeIds = [], challengeMode = 'single' } = requestData;
 
 		// Get lobby info and verify user is the creator
 		const { data: lobby, error: fetchError } = await locals.supabase
@@ -49,32 +51,112 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 			return json({ error: 'Cannot start lobby with no participants' }, { status: 400 });
 		}
 
-		// Update lobby status to running and set start time
-		const { data: updatedLobby, error: updateError } = await locals.supabase
-			.from('lobbies')
-			.update({
-				status: 'running' as const,
-				start_time: new Date().toISOString()
-			})
-			.eq('id', lobbyId)
-			.select()
-			.single();
-
-		if (updateError) {
-			console.error('Failed to start lobby:', updateError);
-			// Return structured error response
-			return json({ 
-				error: 'Failed to start lobby',
-				details: updateError.message || 'Unknown database error',
-				code: updateError.code
-			}, { status: 500 });
+		// Validate challenges
+		if (!challengeIds || challengeIds.length === 0) {
+			return json({ error: 'At least one challenge must be selected' }, { status: 400 });
 		}
 
-		return json({
-			success: true,
-			lobby: updatedLobby,
-			message: 'Lobby started successfully'
-		});
+		// Verify challenges exist
+		const { data: challenges, error: challengeError } = await locals.supabase
+			.from('challenges')
+			.select('id, title, difficulty')
+			.in('id', challengeIds);
+
+		if (challengeError || !challenges || challenges.length !== challengeIds.length) {
+			return json({ error: 'One or more challenges not found' }, { status: 400 });
+		}
+
+		try {
+				if (challengeMode === 'multi' && challengeIds.length > 1) {
+					// Use the multi-challenge function
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const { error: startError } = await (locals.supabase as any)
+						.rpc('start_multi_challenge_lobby', {
+							lobby_id_param: lobbyId,
+							challenge_ids: challengeIds
+						});
+
+					if (startError) {
+						console.error('Multi-challenge start error:', startError);
+						return json({ error: 'Failed to start multi-challenge lobby' }, { status: 500 });
+					}
+			} else {
+				// Single challenge mode
+				const firstChallengeId = challengeIds[0];
+				
+					// Update lobby with single challenge
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const { error: updateError } = await (locals.supabase as any)
+						.from('lobbies')
+						.update({
+							status: 'running',
+							challenge_id: firstChallengeId,
+							challenge_mode: 'single',
+							total_challenges: 1,
+							current_challenge_order: 1,
+							start_time: new Date().toISOString(),
+							countdown_start_time: new Date().toISOString()
+						})
+						.eq('id', lobbyId);
+
+				if (updateError) {
+					console.error('Lobby update error:', updateError);
+					return json({ error: 'Failed to update lobby' }, { status: 500 });
+				}
+
+					// Create lobby_challenge entry
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const { error: challengeError } = await (locals.supabase as any)
+						.from('lobby_challenges')
+						.insert({
+							lobby_id: lobbyId,
+							challenge_id: firstChallengeId,
+							challenge_order: 1,
+							status: 'active',
+							started_at: new Date().toISOString()
+						});
+
+				if (challengeError) {
+					console.error('Challenge creation error:', challengeError);
+					return json({ error: 'Failed to create challenge entry' }, { status: 500 });
+				}
+			}
+
+			// Get updated lobby with challenge info
+			const { data: updatedLobby, error: finalFetchError } = await locals.supabase
+				.from('lobbies')
+				.select(`
+					*,
+					challenges (*),
+					lobby_users (
+						*,
+						users (id, name, email)
+					),
+					lobby_challenges (
+						*,
+						challenges (*)
+					)
+				`)
+				.eq('id', lobbyId)
+				.single();
+
+			if (finalFetchError) {
+				console.error('Final fetch error:', finalFetchError);
+				return json({ error: 'Lobby started but failed to fetch updated data' }, { status: 500 });
+			}
+
+			return json({
+				success: true,
+				lobby: updatedLobby,
+				message: `Lobby started successfully with ${challengeIds.length} challenge(s)`,
+				challengeMode,
+				challengeCount: challengeIds.length
+			});
+
+		} catch (dbError) {
+			console.error('Database operation error:', dbError);
+			return json({ error: 'Failed to start lobby due to database error' }, { status: 500 });
+		}
 		
 	} catch (error) {
 		console.error('Start lobby API error:', error);

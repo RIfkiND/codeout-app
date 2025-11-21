@@ -1,18 +1,22 @@
-import { supabase } from '$lib/supabaseClient';
 import type { PageServerLoad } from './$types';
+import type { RequestEvent } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }: RequestEvent) => {
 	try {
+		// Get user session
+		const { session } = await locals.safeGetSession();
+		const user = session?.user || null;
+
 		// Get platform stats
 		const [challengesResult, usersResult, submissionsResult, lobbiesResult] = await Promise.all([
-			supabase.from('challenges').select('id', { count: 'exact', head: true }),
-			supabase.from('users').select('id', { count: 'exact', head: true }),
-			supabase.from('submissions').select('id', { count: 'exact', head: true }),
-			supabase.from('lobbies').select('id', { count: 'exact', head: true })
+			locals.supabase.from('challenges').select('id', { count: 'exact', head: true }),
+			locals.supabase.from('users').select('id', { count: 'exact', head: true }),
+			locals.supabase.from('submissions').select('id', { count: 'exact', head: true }),
+			locals.supabase.from('lobbies').select('id', { count: 'exact', head: true })
 		]);
 
 		// Get featured challenges
-		const { data: featuredChallenges } = await supabase
+		const { data: featuredChallenges } = await locals.supabase
 			.from('challenges')
 			.select(`
 				id,
@@ -27,48 +31,42 @@ export const load: PageServerLoad = async () => {
 			.limit(6);
 
 		// Get active lobbies
-		const { data: activeLobbies } = await supabase
+		const { data: activeLobbies } = await locals.supabase
 			.from('lobbies')
 			.select(`
 				id,
 				name,
+				description,
 				max_participants,
+				status,
 				start_time,
 				end_time,
 				created_at,
-				users!lobbies_created_by_fkey(
-					name,
-					user_profiles(avatar_url)
-				),
-				lobby_users(
+				lobby_participants(
 					users(
+						id,
 						name,
-						email,
-						user_profiles(avatar_url)
+						email
 					)
 				)
 			`)
-			.eq('status', 'waiting')
+			.in('status', ['pending', 'active'])
 			.order('created_at', { ascending: false })
 			.limit(5);
 
 		// Get global leaderboard
-		const { data: leaderboard } = await supabase
+		const { data: leaderboard } = await locals.supabase
 			.from('users')
 			.select(`
 				id,
 				name,
-				user_profiles(
-					avatar_url,
-					total_score,
-					challenges_solved
-				)
+				email
 			`)
-			.order('user_profiles.total_score', { ascending: false })
+			.order('created_at', { ascending: false })
 			.limit(10);
 
 		// Get quick start challenges (easy ones for beginners)
-		const { data: quickStartChallenges } = await supabase
+		const { data: quickStartChallenges } = await locals.supabase
 			.from('challenges')
 			.select(`
 				id,
@@ -82,6 +80,7 @@ export const load: PageServerLoad = async () => {
 			.limit(4);
 
 		return {
+			user,
 			stats: {
 				challenges: challengesResult.count ?? 0,
 				users: usersResult.count ?? 0,
@@ -98,6 +97,7 @@ export const load: PageServerLoad = async () => {
 		
 		// Return empty data structure if there's an error
 		return {
+			user: null,
 			stats: {
 				challenges: 0,
 				users: 0,
