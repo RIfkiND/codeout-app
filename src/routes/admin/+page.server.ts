@@ -44,7 +44,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				id,
 				created_at,
 				is_correct,
-				users (username, email),
+				users (name, email),
 				challenges (title)
 			`)
 			.order('created_at', { ascending: false })

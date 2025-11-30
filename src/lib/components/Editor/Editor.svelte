@@ -5,11 +5,12 @@
 	import type * as Monaco from 'monaco-editor';
 
 	interface EditorProps {
-		value?: string;
+		value: string;
 		language?: string;
 		theme?: string;
 		height?: string;
 		readonly?: boolean;
+		challengeId?: string;
 		onchange?: (value: string) => void;
 		onready?: (editor: Monaco.editor.IStandaloneCodeEditor) => void;
 	}
@@ -20,6 +21,7 @@
 		theme = 'vs-code-dark',
 		height = '400px',
 		readonly = false,
+		challengeId,
 		onchange,
 		onready
 	}: EditorProps = $props();
@@ -59,7 +61,7 @@
 			await new Promise(resolve => setTimeout(resolve, 100));
 
 			const monacoLang = await getMonacoLanguage(language);
-			const initialValue = internalValue || value || await getTemplate(language);
+			const initialValue = internalValue || value || await getTemplate(language, challengeId);
 			
 			const editorOptions = getEditorOptions({ 
 				minimap: { enabled: false },
@@ -115,7 +117,7 @@
 			}
 			
 			// Load and set template
-			const template = await getTemplate(language);
+			const template = await getTemplate(language, challengeId);
 			if (template && template.trim()) {
 				console.log('Editor: Setting template for:', language);
 				editor.setValue(template);
@@ -152,7 +154,7 @@
 	export async function loadTemplate() { 
 		console.log('loadTemplate called for language:', language);
 		try {
-			const template = await getTemplate(language);
+			const template = await getTemplate(language, challengeId);
 			console.log('Template fetched for', language, ':', template?.substring(0, 100) + '...');
 			if (template && template.trim()) {
 				setValue(template);

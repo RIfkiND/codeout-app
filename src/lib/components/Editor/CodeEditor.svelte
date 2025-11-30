@@ -1,7 +1,9 @@
 <script lang="ts">
 	import Editor from './Editor.svelte';
 	import LanguageSelector from './LanguageSelector.svelte';
-	import { Play, Loader2 } from 'lucide-svelte';
+	import { analyzeCode, type AIAnalysisResult } from '$lib/services/aiService';
+	import AIFeedback from '$lib/components/ui/AIFeedback.svelte';
+	import { Play, Loader2, Zap, RotateCcw } from 'lucide-svelte';
 
 	interface CodeEditorProps {
 		initialCode?: string;
@@ -22,6 +24,10 @@
 	let language = $state('javascript');
 	let isExecuting = $state(false);
 	let lastResult = $state<any>(null);
+	let analysis = $state<AIAnalysisResult | null>(null);
+	let isAnalyzing = $state(false);
+	let showAnalysis = $state(false);
+	let activeTab = $state<'output' | 'analysis'>('output');
 
 	async function handleLanguageChange(newLanguage: string) {
 		language = newLanguage;
@@ -57,6 +63,10 @@
 				const result = await response.json();
 				lastResult = result;
 				onExecute?.(result);
+				// Auto-analyze after successful execution
+				if (result.success) {
+					await analyzeCodeAI();
+				}
 			} else {
 				const error = await response.json();
 				lastResult = {
@@ -84,6 +94,24 @@
 	function resetCode() {
 		editor?.loadTemplate();
 		lastResult = null;
+		analysis = null;
+	}
+
+	async function analyzeCodeAI() {
+		if (!code.trim()) return;
+		
+		isAnalyzing = true;
+		showAnalysis = true;
+		activeTab = 'analysis';
+		
+		try {
+			analysis = await analyzeCode(code, language, challengeId);
+		} catch (error) {
+			console.error('Analysis failed:', error);
+			analysis = null;
+		} finally {
+			isAnalyzing = false;
+		}
 	}
 
 	// Public API
@@ -94,6 +122,8 @@
 		editor?.setValue(newCode);
 	}
 	export function getLastResult() { return lastResult; }
+	export function getAnalysis() { return analysis; }
+	export function triggerAnalysis() { return analyzeCodeAI(); }
 </script>
 
 <div class="flex flex-col gap-4 p-4 bg-neutral-900 rounded-lg border border-neutral-700">
@@ -111,6 +141,13 @@
 				disabled={isExecuting}
 			>
 				Reset
+			</button>
+			<button 
+				onclick={analyzeCodeAI}
+				class="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-500 transition-colors"
+				disabled={isAnalyzing || !code.trim()}
+			>
+				{isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
 			</button>
 			<button 
 				onclick={runCode}
@@ -133,6 +170,7 @@
 		bind:this={editor}
 		bind:value={code}
 		{language}
+		{challengeId}
 		height="400px"
 		onchange={handleCodeChange}
 	/>
@@ -192,6 +230,54 @@
 				</div>
 				<div class="text-sm text-rose-300 bg-rose-500/10 p-2 rounded">
 					{lastResult.error}
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	{#if showAnalysis && analysis}
+		<div class="bg-green-900/20 border-l-4 border-green-400 p-4 mb-4 rounded">
+			<h3 class="text-green-300 font-semibold mb-2">AI Analysis Results</h3>
+			<div class="grid grid-cols-2 gap-4 mb-3">
+				<div class="bg-blue-900/30 p-3 rounded">
+					<span class="text-blue-300 text-sm">Quality Score</span>
+					<div class="text-xl font-bold text-blue-400">{analysis.score}/100</div>
+				</div>
+				<div class="bg-purple-900/30 p-3 rounded">
+					<span class="text-purple-300 text-sm">Readability</span>
+					<div class="text-xl font-bold text-purple-400">{analysis.codeQuality.readability}/100</div>
+				</div>
+			</div>
+			{#if analysis.suggestions && analysis.suggestions.filter(s => s.type === 'improvement').length > 0}
+				<div class="mb-3">
+					<h4 class="text-green-400 text-sm font-semibold mb-2">Improvements</h4>
+					<ul class="text-green-300 text-sm space-y-1">
+						{#each analysis.suggestions.filter(s => s.type === 'improvement') as suggestion}
+							<li class="flex items-start">
+								<span class="text-green-400 mr-2">•</span>
+								{suggestion.message}
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+			{#if analysis.suggestions && analysis.suggestions.filter(s => s.type === 'error' || s.type === 'warning').length > 0}
+				<div>
+					<h4 class="text-red-400 text-sm font-semibold mb-2">Issues Found</h4>
+					<ul class="text-red-300 text-sm space-y-1">
+						{#each analysis.suggestions.filter(s => s.type === 'error' || s.type === 'warning') as suggestion}
+							<li class="flex items-start">
+								<span class="text-red-400 mr-2">⚠</span>
+								{suggestion.message}
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+			{#if analysis.summary}
+				<div class="mt-3 p-3 bg-neutral-800 rounded">
+					<h4 class="text-neutral-300 text-sm font-semibold mb-1">Summary</h4>
+					<p class="text-neutral-400 text-sm">{analysis.summary}</p>
 				</div>
 			{/if}
 		</div>

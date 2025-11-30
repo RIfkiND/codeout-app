@@ -232,7 +232,23 @@ int main() {
 	];
 }
 
-export async function getTemplate(languageName: string): Promise<string> {
+export async function getTemplate(languageName: string, challengeId?: string): Promise<string> {
+	// If we have a challengeId, try to get challenge-specific template
+	if (challengeId) {
+		try {
+			const response = await fetch(`/api/templates?challengeId=${challengeId}&language=${languageName}`);
+			if (response.ok) {
+				const data = await response.json();
+				if (data.success && data.template) {
+					return data.template;
+				}
+			}
+		} catch (error) {
+			console.warn('Failed to fetch challenge-specific template:', error);
+		}
+	}
+
+	// Fallback to language default template
 	const languages = await fetchLanguages();
 	const language = languages.find(l => l.name === languageName || l.display_name === languageName);
 	return language?.template_code || 'function solution() {\n    // Your code here\n    return null;\n}';

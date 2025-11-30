@@ -146,7 +146,7 @@ const difficultyLevels = [
           <CardHeader class="pb-4 relative">
             <div class="flex items-center gap-4 mb-3">
               <div class="p-3 rounded-xl bg-gradient-to-br {action.gradient} shadow-lg">
-                <svelte:component this={action.icon} class="w-6 h-6 text-white" />
+                <action.icon class="w-6 h-6 text-white" />
               </div>
               <Badge variant="outline" class="border-neutral-600 text-neutral-400">
                 {action.stats}
@@ -189,7 +189,7 @@ const difficultyLevels = [
           <Card class="bg-neutral-900/50 border-neutral-800 hover:border-neutral-700 transition-all duration-300 hover:shadow-xl group {level.borderColor} hover:shadow-{level.color}/5">
             <CardHeader class="text-center pb-4">
               <div class="mx-auto mb-4 p-4 rounded-2xl {level.bgColor} w-fit">
-                <svelte:component this={level.icon} class="w-8 h-8 {level.color}" />
+                <level.icon class="w-8 h-8 {level.color}" />
               </div>
               <CardTitle class="text-xl font-bold text-neutral-100 group-hover:text-white transition-colors">
                 {level.name}
@@ -247,7 +247,7 @@ const difficultyLevels = [
             onclick={() => window.location.href = user ? `/challenge?category=${category.name.toLowerCase()}` : '/auth/login'}
             class="p-4 rounded-xl bg-neutral-800/50 border border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800 transition-all duration-200 group text-left"
           >
-            <svelte:component this={category.icon} class="w-5 h-5 {category.color} mb-2" />
+            <category.icon class="w-5 h-5 {category.color} mb-2" />
             <div class="text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">
               {category.name}
             </div>
