@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import type { PageData } from './$types';
 	import HomeHero from '$lib/components/home/HomeHero.svelte';
@@ -16,34 +15,28 @@
 
 <svelte:head>
 	<title>CodeOut - Competitive Programming Platform</title>
-	<meta name="description" content="Join the ultimate competitive programming platform. Practice coding challenges, compete in real-time lobbies, and improve your skills." />
+	<meta
+		name="description"
+		content="Join the ultimate competitive programming platform. Practice coding challenges, compete in real-time lobbies, and improve your skills."
+	/>
 </svelte:head>
 
 <div class="min-h-screen bg-neutral-950">
 	<!-- Hero Section -->
 	<HomeHero />
-	
+
 	<!-- Platform Statistics -->
 	<PlatformStats stats={data.stats} />
-	
-	<!-- Quick Start for Beginners -->
-	<QuickStart challenges={data.quickStartChallenges} />
-	
+
 	<!-- Featured Challenges -->
 	<FeaturedChallenges challenges={data.featuredChallenges} />
-	
+
 	<!-- Skill Badges & Achievements -->
 	<SkillBadges />
-	
+
 	<!-- Live Lobbies -->
 	<LiveLobbies lobbies={data.activeLobbies} />
-	
+
 	<!-- Global Leaderboard -->
 	<GlobalLeaderboard users={data.leaderboard} />
-	
-	<!-- Platform Features -->
-	<HomeFeatures />
-	
-	<!-- Call to Action -->
-	<HomeCTA />
 </div>

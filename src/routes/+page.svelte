@@ -14,16 +14,21 @@
 
 <svelte:head>
 	<title>CodeOut - Master Coding Through Practice | Online Judge & Challenges</title>
-	<meta name="description" content="Level up your coding skills with CodeOut. Solve algorithmic challenges, compete in real-time coding battles, and track your progress. Join thousands of developers improving daily." />
-	<meta name="keywords" content="coding challenges, algorithm practice, leetcode alternative, programming contests, coding interview preparation" />
+	<meta
+		name="description"
+		content="Level up your coding skills with CodeOut. Solve algorithmic challenges, compete in real-time coding battles, and track your progress. Join thousands of developers improving daily."
+	/>
+	<meta
+		name="keywords"
+		content="coding challenges, algorithm practice, leetcode alternative, programming contests, coding interview preparation"
+	/>
 </svelte:head>
 
 <div class="min-h-screen bg-neutral-950">
 	<HomeHero />
 	<PlatformStats stats={data.stats} />
-	<QuickStart challenges={data.quickStartChallenges} user={data.user} />
+	<QuickStart />
 	<SkillBadges />
-	<LiveLobbies lobbies={data.activeLobbies} />
 	<GlobalLeaderboard users={data.leaderboard} />
 	<HomeFeatures />
 	<HomeCTA />
