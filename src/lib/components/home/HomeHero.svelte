@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { Sparkles, LogIn } from 'lucide-svelte';
 	import CodePreview from '../Login/CodePreview.svelte';
+	import { BackgroundBeams } from '$lib/components/ui/BackgroundBeams';
 </script>
 
 <section
-	class="px-auto grid h-screen w-full grid-cols-1 grid-rows-2 content-center items-center justify-center bg-neutral-950 py-20 text-neutral-100"
+	class="px-auto relative grid h-screen w-full grid-cols-1 grid-rows-2 content-center items-center justify-center bg-neutral-950 py-20 text-neutral-100"
 >
-	<div class="flex flex-col items-center justify-center text-center">
+	<BackgroundBeams />
+	<div class="z-10 flex flex-col items-center justify-center text-center">
 		<div
 			class="mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900 px-3 py-1"
 		>
@@ -36,7 +38,7 @@
 			</a>
 		</div>
 	</div>
-	<div class="flex items-center justify-center">
+	<div class="z-10 flex items-center justify-center">
 		<CodePreview />
 	</div>
 </section>
