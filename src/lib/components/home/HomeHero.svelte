@@ -25,7 +25,7 @@
 		<div class="flex flex-col justify-center gap-4 sm:flex-row">
 			<a
 				href="/challenge"
-				class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-12 py-3 text-lg font-bold shadow transition hover:from-emerald-700 hover:to-cyan-700"
+				class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-12 py-3 text-lg font-bold shadow-lg shadow-emerald-600/50 transition hover:from-emerald-700 hover:to-cyan-700"
 			>
 				Start Solving
 			</a>
@@ -39,6 +39,6 @@
 		</div>
 	</div>
 	<div class="z-10 flex items-center justify-center">
-		<CodePreview />
+		<div class="rounded-2xl p-0 shadow-lg shadow-emerald-600/50"><CodePreview /></div>
 	</div>
 </section>
