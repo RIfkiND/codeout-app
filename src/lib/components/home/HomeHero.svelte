@@ -5,10 +5,10 @@
 </script>
 
 <section
-	class="px-auto relative grid h-screen w-full grid-cols-1 grid-rows-2 content-center items-center justify-center bg-neutral-950 py-20 text-neutral-100"
+	class="px-auto relative grid h-screen w-full grid-cols-1 grid-rows-2 content-center items-center justify-center bg-gradient-to-br from-neutral-950 to-neutral-800 py-20 text-neutral-100"
 >
 	<BackgroundBeams />
-	<div class="z-10 flex flex-col items-center justify-center text-center">
+	<div class="z-20 flex flex-col items-center justify-center text-center">
 		<div
 			class="mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900 px-3 py-1"
 		>
