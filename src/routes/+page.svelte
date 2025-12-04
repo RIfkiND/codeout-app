@@ -15,8 +15,14 @@
 
 <svelte:head>
 	<title>CodeOut - Master Coding Through Practice | Online Judge & Challenges</title>
-	<meta name="description" content="Level up your coding skills with CodeOut. Solve algorithmic challenges, compete in real-time coding battles, and track your progress. Join thousands of developers improving daily." />
-	<meta name="keywords" content="coding challenges, algorithm practice, leetcode alternative, programming contests, coding interview preparation" />
+	<meta
+		name="description"
+		content="Level up your coding skills with CodeOut. Solve algorithmic challenges, compete in real-time coding battles, and track your progress. Join thousands of developers improving daily."
+	/>
+	<meta
+		name="keywords"
+		content="coding challenges, algorithm practice, leetcode alternative, programming contests, coding interview preparation"
+	/>
 </svelte:head>
 
 <div class="min-h-screen bg-neutral-950">
@@ -79,4 +85,9 @@ console.log(twoSum([3,2,4], 6));     // Expected: [1,2]`}
 		/>
 	</div>		<HomeFeatures />
 		<HomeCTA />
+	<QuickStart />
+	<SkillBadges />
+	<GlobalLeaderboard users={data.leaderboard} />
+	<HomeFeatures />
+	<HomeCTA />
 </div>
