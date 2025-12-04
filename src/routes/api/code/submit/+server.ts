@@ -34,6 +34,7 @@ async function getOrCreateSinglePlayerSession(supabase: unknown, userId: string)
 	return newSession.id;
 }
 
+// This endpoint runs code AND saves submission to database
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const { session } = await locals.safeGetSession();
@@ -55,6 +56,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.single();
 		
 		if (challengeError || !challenge) {
+			console.log('Challenge not found for submission, ID:', challengeId);
 			return json({ error: 'Challenge not found' }, { status: 404 });
 		}
 
@@ -110,8 +112,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (!lobbyId) {
 				singlePlayerSessionId = await getOrCreateSinglePlayerSession(
 					locals.supabase, 
-					session.user.id, 
-					challengeId
+					session.user.id
 				);
 			}
 			
@@ -158,16 +159,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			
 			return json({
 				success: true,
-				output: result.test_cases.map(tc => `Test ${tc.id}: ${tc.passed ? 'PASSED' : 'FAILED'} (${tc.time})\n${tc.passed ? '' : `Expected: ${tc.expected}, Got: ${tc.actual}`}`).join('\n'),
-				error: result.error_message,
-				executionTime: result.execution_time,
-				memory: result.memory_used,
+				submitted: true,
+				result: {
+					...result,
+					score: allTestsPassed ? 100 : Math.round((result.test_cases_passed / result.total_test_cases) * 100)
+				},
 				testResults: result.test_cases,
 				allTestsPassed,
 				passedCount: result.test_cases_passed,
 				totalCount: result.total_test_cases,
 				isFirstToSolve,
-				isMultiplayer: !!lobbyId
+				isMultiplayer: !!lobbyId,
+				executionTime: result.execution_time,
+				memory: result.memory_used,
+				output: result.test_cases.map(tc => 
+					`Test ${tc.id}: ${tc.passed ? 'PASSED' : 'FAILED'} (${tc.time})\n${tc.passed ? '' : `Expected: ${tc.expected}, Got: ${tc.actual}`}`
+				).join('\n')
 			});
 			
 		} catch (executionError) {
@@ -178,8 +185,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (!lobbyId) {
 				singlePlayerSessionId = await getOrCreateSinglePlayerSession(
 					locals.supabase, 
-					session.user.id, 
-					challengeId
+					session.user.id
 				);
 			}
 			
@@ -209,16 +215,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			
 			return json({
 				success: false,
-				output: '',
+				submitted: true,
 				error: executionError instanceof Error ? executionError.message : 'Code execution failed',
-				executionTime: 0,
-				memory: 0,
 				testResults: [],
 				allTestsPassed: false,
 				passedCount: 0,
-				totalCount: testCases.length,
+				totalCount: formattedTestCases.length,
 				isFirstToSolve: false,
-				isMultiplayer: !!lobbyId
+				isMultiplayer: !!lobbyId,
+				executionTime: 0,
+				memory: 0,
+				output: `Error: ${executionError instanceof Error ? executionError.message : 'Code execution failed'}`
 			});
 		}
 		

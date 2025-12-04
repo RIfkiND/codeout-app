@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import type { RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	try {
@@ -9,17 +9,16 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		// If requesting challenge-specific template
 		if (challengeId && language) {
 			try {
-				// Use the new database function to get challenge-specific template
-				const { data, error } = await locals.supabase
-					.rpc('get_challenge_template', {
-						p_challenge_id: challengeId,
-						p_language_name: language
-					});
-
-				if (!error && data) {
+				// Get challenge-specific template from database
+			const { data: template, error } = await locals.supabase
+				.from('challenge_templates')
+				.select('template_code')
+				.eq('challenge_id', challengeId)
+				.eq('language_name', language)
+				.single() as { data: { template_code: string } | null; error: unknown };				if (!error && template) {
 					return json({
 						success: true,
-						template: data,
+						template: template?.template_code,
 						source: 'challenge-specific'
 					});
 				}
@@ -33,7 +32,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				.select('template_code')
 				.eq('name', language)
 				.eq('is_active', true)
-				.single();
+				.single() as { data: { template_code: string } | null };
 
 			return json({
 				success: true,

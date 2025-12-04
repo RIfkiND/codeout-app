@@ -25,12 +25,50 @@ let { isOpen = false, languages, onClose, onSubmit }: Props = $props();
 let formData = $state({
 	name: '',
 	description: '',
-	language: '',
+	language: 'javascript',
 	templateCode: '',
-	isPublic: false
+	isPublic: false,
+	category: 'general',
+	tags: [] as string[]
 });
 
 let isSubmitting = $state(false);
+let newTag = $state('');
+
+const predefinedTags = [
+	'algorithms', 'data-structures', 'arrays', 'strings', 'trees', 'graphs',
+	'dynamic-programming', 'recursion', 'sorting', 'searching', 'math',
+	'geometry', 'greedy', 'backtracking', 'two-pointers', 'sliding-window'
+];
+
+const categories = [
+	'general', 'algorithms', 'data-structures', 'web-development', 
+	'system-design', 'mathematics', 'string-manipulation', 'database'
+];
+
+const loadLanguageTemplate = () => {
+	const selectedLang = languages.find(l => l.name === formData.language);
+	if (selectedLang?.template_code) {
+		formData.templateCode = selectedLang.template_code;
+	}
+};
+
+const addTag = () => {
+	if (newTag.trim() && !formData.tags.includes(newTag.trim().toLowerCase())) {
+		formData.tags = [...formData.tags, newTag.trim().toLowerCase()];
+		newTag = '';
+	}
+};
+
+const removeTag = (tagToRemove: string) => {
+	formData.tags = formData.tags.filter(tag => tag !== tagToRemove);
+};
+
+const addPredefinedTag = (tag: string) => {
+	if (!formData.tags.includes(tag)) {
+		formData.tags = [...formData.tags, tag];
+	}
+};
 
 const handleSubmit = async (e: Event) => {
 	e.preventDefault();
@@ -47,8 +85,14 @@ const handleSubmit = async (e: Event) => {
 			name: formData.name.trim(),
 			description: formData.description.trim() || null,
 			language: formData.language,
+			category: formData.category,
+			tags: formData.tags,
 			template_data: {
 				code: formData.templateCode,
+				metadata: {
+					created_at: new Date().toISOString(),
+					version: '1.0'
+				},
 				structure: 'basic'
 			},
 			is_public: formData.isPublic
@@ -62,7 +106,9 @@ const handleSubmit = async (e: Event) => {
 			description: '',
 			language: '',
 			templateCode: '',
-			isPublic: false
+			isPublic: false,
+			category: '',
+			tags: []
 		};
 	} catch (error) {
 		console.error('Template creation error:', error);
@@ -77,7 +123,9 @@ const handleClose = () => {
 		description: '',
 		language: '',
 		templateCode: '',
-		isPublic: false
+		isPublic: false,
+		category: '',
+		tags: []
 	};
 	onClose?.();
 };

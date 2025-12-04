@@ -5,11 +5,13 @@
 	interface LanguageSelectorProps {
 		selected?: string;
 		onChange?: (language: string) => void;
+		disabled?: boolean;
 	}
 
 	let { 
 		selected = $bindable('javascript'),
-		onChange
+		onChange,
+		disabled = false
 	}: LanguageSelectorProps = $props();
 
 	let languages: ProgrammingLanguage[] = $state([]);
@@ -27,8 +29,11 @@
 		if (newValue !== selected) {
 			console.log('LanguageSelector: Language changed, updating selected and calling onChange');
 			selected = newValue;
-			onChange?.(newValue);
-			console.log('LanguageSelector: onChange callback completed');
+			// Call onChange after a small delay to ensure binding is updated
+			setTimeout(() => {
+				onChange?.(newValue);
+				console.log('LanguageSelector: onChange callback completed');
+			}, 10);
 		} else {
 			console.log('LanguageSelector: No change detected, skipping onChange');
 		}
@@ -47,7 +52,8 @@
 			id="language-select"
 			value={selected}
 			onchange={handleChange}
-			class="px-3 py-2 border border-gray-600 rounded-lg bg-neutral-800/50 text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+			disabled={disabled}
+			class="px-3 py-2 border border-gray-600 rounded-lg bg-neutral-800/50 text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 		>
 			{#each languages as lang}
 				<option value={lang.name} class="bg-neutral-800 text-white">

@@ -75,7 +75,7 @@
 		testResults = null;
 		
 		try {
-			const response = await fetch('/api/code/execute', {
+			const response = await fetch('/api/code/run', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -83,8 +83,7 @@
 				body: JSON.stringify({
 					language,
 					code: currentCode,
-					challengeId: challenge.id,
-					lobbyId: lobby.id
+					challengeId: challenge.id
 				})
 			});
 			

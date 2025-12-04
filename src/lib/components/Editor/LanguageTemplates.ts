@@ -228,6 +228,20 @@ int main() {
     return 0;
 }`,
 			is_active: true
+		},
+		{
+			id: 'sql',
+			name: 'sql',
+			display_name: 'SQL',
+			file_extension: '.sql',
+			monaco_language_id: 'sql',
+			piston_language: 'sqlite3',
+			piston_version: '3.36.0',
+			template_code: `-- Write your SQL query here
+-- Example: SELECT * FROM table_name WHERE condition;
+
+`,
+			is_active: true
 		}
 	];
 }

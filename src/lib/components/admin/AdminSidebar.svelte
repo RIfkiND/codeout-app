@@ -21,13 +21,13 @@ interface NavItem {
 
 const navItems: NavItem[] = [
 	{ label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-	{ label: 'Create Challenge', href: '/admin/challenges/create', icon: Plus },
+	{ label: 'Analytics', href: '/admin/analytics', icon: BarChart },
+	{ label: 'Users', href: '/admin/users', icon: Users },
 	{ label: 'Challenges', href: '/admin/challenges', icon: Trophy },
 	{ label: 'Templates', href: '/admin/templates', icon: Code },
-	{ label: 'Users', href: '/admin/users', icon: Users },
+	{ label: 'Create Challenge', href: '/admin/challenges/create', icon: Plus },
 	{ label: 'Lobbies', href: '/admin/lobbies', icon: Shield },
 	{ label: 'Submissions', href: '/admin/submissions', icon: FileText },
-	{ label: 'Analytics', href: '/admin/analytics', icon: BarChart },
 	{ label: 'Settings', href: '/admin/settings', icon: Settings }
 ];
 
@@ -52,7 +52,7 @@ function isActive(href: string): boolean {
 				}"
 				href={item.href}
 			>
-				<svelte:component this={item.icon} class="h-4 w-4 mr-3" />
+				<item.icon class="h-4 w-4 mr-3" />
 				{item.label}
 			</Button>
 		{/each}

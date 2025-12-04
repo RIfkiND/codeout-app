@@ -80,14 +80,33 @@ export async function executeCodeWithTests(
 	challengeId?: string
 ): Promise<CodeExecutionResult> {
 	try {
-		const response = await fetch('/api/code/execute', {
+		// For demo purposes on home page, if challengeId is a simple string like 'two-sum',
+		// we'll mock the execution rather than hitting the API
+		if (!challengeId || challengeId === 'two-sum' || challengeId === 'sample') {
+			return {
+				success: true,
+				output: 'Demo execution completed! This is a demonstration of the code execution feature.\n\nTo test real challenges with proper test cases, please visit the Challenges page.',
+				testResults: [
+					{
+						name: 'Demo Test 1',
+						passed: true,
+						input: 'Sample input',
+						output: 'Sample output',
+						expected: 'Sample output'
+					}
+				],
+				executionTime: 42
+			};
+		}
+
+		const response = await fetch('/api/code/run', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({
-				code,
 				language,
+				code,
 				challengeId
 			})
 		});

@@ -301,20 +301,26 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			title: challengeData.title,
 			description: challengeData.description,
 			difficulty: challengeData.difficulty,
-			time_limit: challengeData.time_limit || challengeData.timeLimit, // Support both field names
-			memory_limit: challengeData.memory_limit || challengeData.memoryLimit,
+			category: challengeData.category || null,
+			time_limit: challengeData.time_limit || challengeData.timeLimit || 1000,
+			memory_limit: challengeData.memory_limit || challengeData.memoryLimit || 256,
+			max_score: challengeData.max_score || 100,
 			tags: challengeData.tags || [],
-			testcases: challengeData.test_cases || challengeData.testcases, // Support both field names
+			testcases: challengeData.test_cases || challengeData.testcases,
 			starter_code: challengeData.starter_code ? { default: challengeData.starter_code } : {},
 			is_global,
-			lobby_id: is_global ? null : lobby_id,
 			created_by: user.id,
-			// Optional fields from enhanced schema
+			// Enhanced fields from database schema
 			images: challengeData.images || [],
+			video_url: challengeData.video_url || null,
 			hints: challengeData.hints || [],
-			solution_explanation: challengeData.solution_explanation,
-			input_example: challengeData.input_example,
-			output_example: challengeData.output_example
+			solution_explanation: challengeData.solution_explanation || null,
+			input_example: challengeData.input_example || null,
+			output_example: challengeData.output_example || null,
+			// Initialize statistics fields
+			view_count: 0,
+			attempt_count: 0,
+			success_rate: 0.0
 		};
 
 		// Validate required fields

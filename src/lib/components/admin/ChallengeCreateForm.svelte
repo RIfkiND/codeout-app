@@ -34,8 +34,16 @@ let tagInput = $state('');
 let tags: string[] = $state([]);
 let timeLimit = $state(1000);
 let memoryLimit = $state(256);
+let maxScore = $state(100);
+let inputExample = $state('');
+let outputExample = $state('');
 let starterCode = $state('');
-let solutionCode = $state('');
+let solutionExplanation = $state('');
+let videoUrl = $state('');
+let hints: string[] = $state([]);
+let hintInput = $state('');
+let images: string[] = $state([]);
+let imageInput = $state('');
 let testCases: TestCase[] = $state([
 	{ input: '', output: '', explanation: '' }
 ]);
@@ -98,6 +106,28 @@ function addTag(tag?: string) {
 
 function removeTag(tagToRemove: string) {
 	tags = tags.filter(tag => tag !== tagToRemove);
+}
+
+function addHint() {
+	if (hintInput.trim() && !hints.includes(hintInput.trim())) {
+		hints = [...hints, hintInput.trim()];
+		hintInput = '';
+	}
+}
+
+function removeHint(hintToRemove: string) {
+	hints = hints.filter(hint => hint !== hintToRemove);
+}
+
+function addImage() {
+	if (imageInput.trim() && !images.includes(imageInput.trim())) {
+		images = [...images, imageInput.trim()];
+		imageInput = '';
+	}
+}
+
+function removeImage(imageToRemove: string) {
+	images = images.filter(image => image !== imageToRemove);
 }
 
 function addTestCase() {
@@ -301,7 +331,7 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 			<Tabs value="starter" class="w-full">
 				<TabsList class="bg-neutral-800 border-neutral-700">
 					<TabsTrigger value="starter" class="text-neutral-300">Starter Code</TabsTrigger>
-					<TabsTrigger value="solution" class="text-neutral-300">Solution Code</TabsTrigger>
+					<TabsTrigger value="solution" class="text-neutral-300">Solution Explanation</TabsTrigger>
 				</TabsList>
 				<TabsContent value="starter" class="mt-4">
 					<Textarea
@@ -314,14 +344,162 @@ function updateTestCase(index: number, field: keyof TestCase, value: string) {
 				</TabsContent>
 				<TabsContent value="solution" class="mt-4">
 					<Textarea
-						name="solution_code"
-						bind:value={solutionCode}
-						placeholder="Enter solution code..."
+						name="solution_explanation"
+						bind:value={solutionExplanation}
+						placeholder="Enter detailed solution explanation..."
 						rows={8}
-						class="bg-neutral-800 border-neutral-700 text-neutral-100 font-mono"
+						class="bg-neutral-800 border-neutral-700 text-neutral-100"
 					/>
 				</TabsContent>
 			</Tabs>
+		</Card>
+
+		<!-- Examples and Media -->
+		<Card class="bg-neutral-900 border-neutral-800 p-6">
+			<h2 class="text-xl font-semibold text-neutral-100 mb-6">Examples & Media</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+				<div>
+					<Label for="inputExample" class="text-neutral-300">Input Example</Label>
+					<Textarea
+						id="inputExample"
+						name="input_example"
+						bind:value={inputExample}
+						placeholder="Show example input format..."
+						rows={4}
+						class="bg-neutral-800 border-neutral-700 text-neutral-100 font-mono"
+					/>
+				</div>
+				
+				<div>
+					<Label for="outputExample" class="text-neutral-300">Output Example</Label>
+					<Textarea
+						id="outputExample"
+						name="output_example"
+						bind:value={outputExample}
+						placeholder="Show example output format..."
+						rows={4}
+						class="bg-neutral-800 border-neutral-700 text-neutral-100 font-mono"
+					/>
+				</div>
+
+				<div>
+					<Label for="maxScore" class="text-neutral-300">Maximum Score</Label>
+					<Input
+						id="maxScore"
+						name="max_score"
+						type="number"
+						bind:value={maxScore}
+						min="1"
+						max="1000"
+						class="bg-neutral-800 border-neutral-700 text-neutral-100"
+					/>
+				</div>
+
+				<div>
+					<Label for="videoUrl" class="text-neutral-300">Video URL (Optional)</Label>
+					<Input
+						id="videoUrl"
+						name="video_url"
+						bind:value={videoUrl}
+						placeholder="https://youtube.com/watch?v=..."
+						class="bg-neutral-800 border-neutral-700 text-neutral-100"
+					/>
+				</div>
+			</div>
+		</Card>
+
+		<!-- Hints Section -->
+		<Card class="bg-neutral-900 border-neutral-800 p-6">
+			<h2 class="text-xl font-semibold text-neutral-100 mb-6">Hints</h2>
+			<div class="space-y-4">
+				<div class="flex gap-2">
+					<Input
+						bind:value={hintInput}
+						placeholder="Add a helpful hint for students..."
+						class="bg-neutral-800 border-neutral-700 text-neutral-100 flex-1"
+						onkeydown={(e) => {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								addHint();
+							}
+						}}
+					/>
+					<Button type="button" onclick={addHint} variant="outline" class="border-neutral-700">
+						<Plus class="h-4 w-4" />
+					</Button>
+				</div>
+
+				<input type="hidden" name="hints" value={JSON.stringify(hints)} />
+				{#if hints.length > 0}
+					<div>
+						<Label class="text-neutral-300">Hints ({hints.length})</Label>
+						<div class="space-y-2 mt-2">
+							{#each hints as hint, index}
+								<div class="flex items-center gap-2 p-3 bg-neutral-800 rounded-lg">
+									<span class="text-sm text-neutral-400">#{index + 1}</span>
+									<span class="text-neutral-300 flex-1">{hint}</span>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										class="text-red-400 hover:text-red-300"
+										onclick={() => removeHint(hint)}
+									>
+										<Trash2 class="h-4 w-4" />
+									</Button>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</Card>
+
+		<!-- Images Section -->
+		<Card class="bg-neutral-900 border-neutral-800 p-6">
+			<h2 class="text-xl font-semibold text-neutral-100 mb-6">Images</h2>
+			<div class="space-y-4">
+				<div class="flex gap-2">
+					<Input
+						bind:value={imageInput}
+						placeholder="Add image URL for diagrams, examples, etc..."
+						class="bg-neutral-800 border-neutral-700 text-neutral-100 flex-1"
+						onkeydown={(e) => {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								addImage();
+							}
+						}}
+					/>
+					<Button type="button" onclick={addImage} variant="outline" class="border-neutral-700">
+						<Plus class="h-4 w-4" />
+					</Button>
+				</div>
+
+				<input type="hidden" name="images" value={JSON.stringify(images)} />
+				{#if images.length > 0}
+					<div>
+						<Label class="text-neutral-300">Images ({images.length})</Label>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+							{#each images as image}
+								<div class="relative group">
+									<img src={image} alt="Challenge preview" class="w-full h-32 object-cover rounded-lg border border-neutral-700" />
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										class="absolute top-2 right-2 bg-black/50 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+										onclick={() => removeImage(image)}
+									>
+										<Trash2 class="h-4 w-4" />
+									</Button>
+									<p class="text-xs text-neutral-400 mt-1 truncate">{image}</p>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</div>
 		</Card>
 		
 		<!-- Test Cases -->

@@ -34,7 +34,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// Execute the code first
-		const executionResult = await fetch('/api/code/execute', {
+		const executionResult = await fetch('/api/code/run', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -42,7 +42,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			body: JSON.stringify({
 				language,
 				code,
-				input: '' // You might want to get test cases and run them
+				challengeId: challenge_id
 			})
 		});
 
